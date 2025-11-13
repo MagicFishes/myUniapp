@@ -1,0 +1,134 @@
+/* 水平间距 */
+/* 水平间距 */
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+.page-content {
+  padding: 24rpx 32rpx 48rpx;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.nav-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 36rpx;
+  background: rgba(0, 122, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, #007aff, #00c6ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.header-chip {
+  padding: 12rpx 28rpx;
+  border-radius: 36rpx;
+  background: #ffffff;
+  color: #666;
+  font-size: 24rpx;
+  transition: all 0.2s;
+}
+.header-chip.active {
+  background: #007aff;
+  color: #fff;
+  box-shadow: 0 12rpx 28rpx rgba(0, 122, 255, 0.18);
+}
+.header-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 36rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+.hero {
+  padding: 40rpx 32rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #007aff, #00c6ff);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.title {
+  font-size: 40rpx;
+  font-weight: 600;
+}
+.subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+.subtitle.hint {
+  display: flex;
+  gap: 8rpx;
+  align-items: center;
+  font-size: 26rpx;
+  opacity: 1;
+}
+.highlight {
+  font-weight: 600;
+}
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 28rpx;
+}
+.card-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+.shortcuts {
+  display: flex;
+  justify-content: space-between;
+}
+.shortcut {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  color: #333;
+}
+.shortcut-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 32rpx;
+  background: #f1f5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+}
+.shortcut-label {
+  font-size: 26rpx;
+}
