@@ -3,7 +3,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"]
     },
     "lib": ["esnext", "dom"],
     "types": [
@@ -11,6 +11,13 @@
       "uni-modules/uview-plus/types"
     ]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.ts",
+    "**/*.vue",
+    "**/*.js"
+  ],
+  "exclude": ["node_modules", "unpackage"]
 }
 

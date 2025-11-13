@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import uni from "@dcloudio/vite-plugin-uni";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -8,6 +9,11 @@ export default defineConfig({
     uni(),
     visualizer()
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./", import.meta.url))
+    }
+  },
   css: {
     preprocessorOptions: {
       scss: {

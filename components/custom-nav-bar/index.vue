@@ -82,7 +82,7 @@ const handleBack = () => {
 
 <style lang="scss">
 .custom-nav-bar {
-	height: calc(44px + var(--status-bar-height));
+	// height: calc(44px + var(--status-bar-height));
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -92,7 +92,7 @@ const handleBack = () => {
 	align-items: center;
 	justify-content: space-between;
 	padding: 0 15px;
-	padding-top: var(--status-bar-height);
+	// padding-top: var(--status-bar-height);
 	background-color: #ffffff;
 	box-sizing: border-box;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
