@@ -48,7 +48,6 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
-import { onMounted, onShow } from '@dcloudio/uni-app'
 
 type TabItem = {
 	key: string
@@ -167,13 +166,8 @@ const hideSystemTabBar = () => {
 	}
 }
 
-onMounted(() => {
-	hideSystemTabBar()
-})
-
-onShow(() => {
-	hideSystemTabBar()
-})
+// 组件初始化时执行
+hideSystemTabBar()
 
 watch(
 	() => resolvedActive.value,
@@ -235,12 +229,16 @@ defineExpose({
 
 <style lang="scss">
 .custom-tab-bar {
+	position: fixed; // 固定在底部
+	bottom: 0; // 距离底部0
+	left: 0; // 左边对齐
+	right: 0; // 右边对齐
 	width: 100%;
 	display: flex;
 	flex-direction: column;
-	margin-top: auto;
 	box-sizing: border-box;
-	z-index: 95;
+	z-index: 9999;
+	background-color: #ffffff; // 添加背景色，避免内容透过
 
 	&.has-border {
 		border-top: 1rpx solid rgba(0, 0, 0, 0.08);

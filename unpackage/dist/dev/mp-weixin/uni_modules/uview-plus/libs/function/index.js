@@ -581,6 +581,7 @@ exports.$parent = $parent;
 exports.addStyle = addStyle;
 exports.addUnit = addUnit;
 exports.deepMerge = deepMerge;
+exports.error = error;
 exports.index = index;
 exports.page = page;
 exports.queryParams = queryParams;

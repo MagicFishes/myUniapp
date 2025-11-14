@@ -5,7 +5,8 @@
 
 const DEFAULT_SAFE_TOP = 20
 const DEFAULT_NAV_HEIGHT = 44
-
+// 底部导航栏高度  200
+const DEFAULT_BOTTOM_NAV_HEIGHT = 110
 /**
  * 获取当前可用的平台 API（优先使用 uni）。
  */
@@ -112,6 +113,12 @@ export default {
 	 */
 	get totalSafeAreaHeight() {
 		return ensureSafeTopHeight() + ensureCustomNavBarHeight()
+	},
+	/**
+	 * 底部导航栏高度（单位：px）
+	 */
+	get bottomNavHeight() {
+		return DEFAULT_BOTTOM_NAV_HEIGHT
 	},
 	/**
 	 * 主动刷新全部高度信息。

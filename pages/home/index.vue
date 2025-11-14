@@ -1,33 +1,59 @@
 <template>
 	<view class="page">
-	  <customNavBar  :showBackButton="false" :autoBack="false" title=""></customNavBar>
-		<view
-			class="page-content"
-			:style="`margin-top: ${navMetrics.totalSafeAreaHeight}px;`"
-		>
-			<view class="hero">
-				<view class="title">欢迎来到 Anydoor 旅途</view>
-				<view class="subtitle">快速查看行程与常用功能</view>
-				<view class="subtitle hint">
-					当前筛选：
-					<text class="highlight">{{ activeFilterLabel }}</text>
+		<!-- <customNavBar  :showBackButton="false" :autoBack="false" title=""></customNavBar> -->
+		<!-- :style="`margin-top: ${navMetrics.totalSafeAreaHeight}px;`" -->
+		<view class="page-content" :style="{ paddingBottom: `${utils.bottomNavHeight}px` }">
+			<view class="nav-banner">
+					<up-swiper 
+					:circular="true" :indicatorMode="'dot'"
+					 :indicatorStyle="{bottom: '130rpx',right: '50rpx'}" 
+					 :indicator="true"  height="600rpx" :list="list1" 
+					 mode="aspectFill">
+					</up-swiper>
 				</view>
-			</view>
-
-			<view class="card">
-				<view class="card-title">快捷入口</view>
-				<view class="shortcuts">
-					<view
-						v-for="item in shortcuts"
-						:key="item.label"
-						class="shortcut"
-					>
-						<view class="shortcut-icon">{{ item.icon }}</view>
-						<view class="shortcut-label">{{ item.label }}</view>
+				<!-- 搜索栏 -->
+				<view class="Content">
+					<view class="content-search">
+						<view class="content-search-position">
+							<view class="content-search-position-text">
+								目的地
+							</view>
+							<view class="content-search-position-icon">
+								<uni-icons type="location" size="20" color="#999"></uni-icons>
+								<view class="content-search-position-icon-text">
+									我的定位
+								</view>
+							</view>
+						</view>
+						<view class="content-search-date">
+							<ChooseTimeData :height="100"></ChooseTimeData>
+						</view>
+						<view class="content-search-hotel">
+							<view class="content-search-hotel-text">
+								关键词/品牌/酒店名
+							</view>
+							<view class="content-search-hotel-icon">
+								<uni-icons type="search" size="20" color="#999"></uni-icons>
+							</view>
+						</view>
+						<view class="content-search-button">
+							酒店查询
+						</view>
+					</view>
+					<!-- 礼遇 -->
+					<!-- 酒店推荐 -->
+					<view class="content-search-hotel-recommend">
+						<view 
+							v-for="(item, index) in hotelItemList" 
+							:key="item.id || index"
+							class="content-search-hotel-recommend-item"
+						>
+							<HotelItem :item="item" />
+						</view>	
 					</view>
 				</view>
-			</view>
 		</view>
+
 		<!-- 底部导航栏 -->
 		<customTabBar />
 	</view>
@@ -35,204 +61,180 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import navMetrics from '../../utils/utils.js'
-
-const uni = (globalThis as any).uni
-
-const shortcuts = ref([
-	{ label: '行程管理', icon: '🧳' },
-	{ label: '目的地推荐', icon: '📍' },
-	{ label: '常用联系人', icon: '👥' }
-])
-
-const filters = ref([
-	{ label: '全部', value: 'all' },
-	{ label: '差旅', value: 'travel' },
-	{ label: '审批', value: 'approve' }
-])
-
-const activeFilter = ref('all')
-
-const activeFilterLabel = computed(() => {
-	const current = filters.value.find((item) => item.value === activeFilter.value)
-	return current ? current.label : ''
+import { onShow } from '@dcloudio/uni-app'
+import { reactive } from 'vue';
+import ChooseTimeData from '@/components/choose-time-data/index.vue';
+import HotelItem from '@/components/hotel-item/index.vue';
+import utils from '@/utils/utils';
+// 页面显示时执行（每次显示都会执行）
+onShow(() => {
+	console.log('首页显示')
+	// 刷新数据，比如：获取最新行程列表、更新用户信息等
+	// 例如：fetchTripList()
+	// 例如：updateUserInfo()
 })
 
-const switchFilter = (value: string) => {
-	activeFilter.value = value
-	uni.showToast({
-		title: `已切换到${activeFilterLabel.value}`,
-		icon: 'none'
-	})
-}
 
-const handleSearch = () => {
-	uni.showToast({
-		title: '搜索功能开发中',
-		icon: 'none'
-	})
-}
-
-const handleNotice = () => {
-	uni.showToast({
-		title: '暂无新通知',
-		icon: 'none'
-	})
-}
+// 使用 reactive 创建响应式数组  
+const list1 = reactive([
+	'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+	'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+	'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+	'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+	'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+]);  
+const hotelItemList = reactive([
+	{
+		id: 1, // 添加 id 字段
+		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+		name: '酒店名称1',
+		price: '100',
+		label: ['住3付2', '享奢旅积分', '享奢旅积分', '享奢旅积分', '享奢旅积分'],
+	},
+	{
+		id: 2, // 添加 id 字段
+		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+		name: '酒店名称2',
+		price: '200',
+		label: ['住3付2', '享奢旅积分'],
+	},
+	{
+		id: 3, // 添加 id 字段
+		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
+		name: '酒店名称3',
+		price: '300',
+		label: ['住3付2', '享奢旅积分'],
+	}
+]);
 </script>
 
-<style lang="scss">
-.page {
-	min-height: 100vh;
-	background: #f5f5f5;
+<style scoped lang="scss">
+.page{
+	min-height: 100vh; // 改为 min-height，允许内容超出
 	display: flex;
+	width: 100vw;
 	flex-direction: column;
-}
-
-.page-content {
-	// margin-top: calc(44px + var(--status-bar-height, 20px));
-	padding: 24rpx 32rpx 48rpx;
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 32rpx;
-}
-
-.nav-actions {
-	display: flex;
-	align-items: center;
-	gap: 24rpx;
-}
-
-.nav-icon {
-	width: 72rpx;
-	height: 72rpx;
-	border-radius: 36rpx;
-	background: rgba(0, 122, 255, 0.12);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.nav-avatar {
-	width: 72rpx;
-	height: 72rpx;
-	border-radius: 36rpx;
-	background: linear-gradient(135deg, #007aff, #00c6ff);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #fff;
-	font-weight: 600;
-}
-
-.header-actions {
-	display: flex;
-	align-items: center;
-	gap: 16rpx;
-}
-
-.header-chip {
-	padding: 12rpx 28rpx;
-	border-radius: 36rpx;
-	background: #ffffff;
-	color: #666;
-	font-size: 24rpx;
-	transition: all 0.2s;
-
-	&.active {
-		background: #007aff;
-		color: #fff;
-		box-shadow: 0 12rpx 28rpx rgba(0, 122, 255, 0.18);
+	.page-content{
+		flex: 1;
+		box-sizing: border-box;
+		.nav-banner{
+			position: relative; // z-index 必须配合定位属性使用
+			z-index: 1;
+		// width: 100%;
+			height: 600rpx;
+		}
+		.Content{
+			position: relative; // z-index 必须配合定位属性使用
+			z-index: 100;
+			margin-top: -100rpx;
+			width: 100%;
+			padding: 20rpx;
+			box-sizing: border-box; // 让padding包含在宽度内
+			display: flex;
+			flex-direction: column;
+			// gap: 20rpx;
+			justify-content: start;
+			align-items: center;
+			.content-search{
+				width: 95%; // 现在100%会自动减去父元素的padding
+				display: flex;
+				flex: none; // 改为 none，不占据所有空间，让后续元素可以显示
+				min-height: 300rpx;
+				background-color: #fff;
+				border-radius: 20rpx;
+				padding: 40rpx 30rpx;
+				box-sizing: border-box;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				align-items: center;
+				.content-search-position{
+					width: 100%;
+					height: 100rpx;
+					border-bottom: 1rpx solid #e5e5e5;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					.content-search-position-text{
+						font-size: 40rpx;
+						font-weight: bold;
+						letter-spacing: 2rpx;
+					}
+					.content-search-position-icon{
+						height: 100%;
+						display: flex;
+						justify-content: center;
+						align-items: center;
+						flex-direction: column;
+						.content-search-position-icon-text{
+							font-size: 20rpx;
+							color: #999;
+						}
+					}
+				}
+				.content-search-date{
+					width: 100%;
+					// height: 100rpx; // 给父元素设置明确高度，子元素的100%才能计算
+					border-bottom: 1rpx solid #e5e5e5;
+					display: flex;
+					flex-direction: column; // 设置为列布局
+					align-items: stretch; // 让子元素撑满宽度（默认值，但明确设置更清晰）
+				}
+				.content-search-hotel{
+					width: 100%;
+					height: 100rpx;
+					border-bottom: 1rpx solid #e5e5e5;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					.content-search-hotel-text{
+						font-size: 30rpx;
+						color: #c3c3c3;
+						letter-spacing: 2rpx;
+					}
+					.content-search-hotel-icon{
+						height: 100%;
+						display: flex;
+						justify-content: center;
+						align-items: center;
+						flex-direction: column;
+					}
+				}
+				.content-search-button{
+					width: 100%;
+					margin-top: 30rpx;
+					height: 100rpx;
+					border-radius: 60rpx;
+					background-color: #000;
+					color: #fff;
+					font-size: 30rpx;
+					letter-spacing: 2rpx;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					flex-direction: column;
+				}
+			}
+			// 酒店推荐 一行两个
+			.content-search-hotel-recommend{
+				width: 95%; // 与 .content-search 保持一致
+				margin-top: 30rpx;
+				border-radius: 20rpx;
+				box-sizing: border-box;
+				display: grid;
+				grid-template-columns: repeat(2, 1fr); // 一行两个
+				// grid-template-rows: repeat(2, 1fr); // 移除固定行数，让内容自适应
+				grid-column-gap: 30rpx;
+				grid-row-gap: 30rpx;
+				.content-search-hotel-recommend-item{
+					width: 100%;
+					height: 500rpx;
+					background-color: #fff; // 添加背景色，方便查看
+					border-radius: 20rpx;
+					overflow: hidden; // 确保圆角生效
+				}
+			}
+		}
 	}
-}
-
-.header-icon {
-	width: 72rpx;
-	height: 72rpx;
-	border-radius: 36rpx;
-	background: #ffffff;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.08);
-}
-
-.hero {
-	padding: 40rpx 32rpx;
-	border-radius: 24rpx;
-	background: linear-gradient(135deg, #007aff, #00c6ff);
-	color: #fff;
-	display: flex;
-	flex-direction: column;
-	gap: 16rpx;
-}
-
-.title {
-	font-size: 40rpx;
-	font-weight: 600;
-}
-
-.subtitle {
-	font-size: 28rpx;
-	opacity: 0.9;
-
-	&.hint {
-		display: flex;
-		gap: 8rpx;
-		align-items: center;
-		font-size: 26rpx;
-		opacity: 1;
-	}
-}
-
-.highlight {
-	font-weight: 600;
-}
-
-.card {
-	background: #fff;
-	border-radius: 24rpx;
-	padding: 32rpx;
-	box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.08);
-	display: flex;
-	flex-direction: column;
-	gap: 28rpx;
-}
-
-.card-title {
-	font-size: 32rpx;
-	font-weight: 500;
-	color: #333;
-}
-
-.shortcuts {
-	display: flex;
-	justify-content: space-between;
-}
-
-.shortcut {
-	width: 30%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12rpx;
-	color: #333;
-}
-
-.shortcut-icon {
-	width: 96rpx;
-	height: 96rpx;
-	border-radius: 32rpx;
-	background: #f1f5ff;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 48rpx;
-}
-
-.shortcut-label {
-	font-size: 26rpx;
 }
 </style>
-

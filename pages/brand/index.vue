@@ -53,6 +53,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import navMetrics from '../../utils/utils.js'
 
 const uni = (globalThis as any).uni
@@ -80,8 +81,9 @@ const hideSystemTabBar = () => {
 	}
 }
 
-onMounted(hideSystemTabBar)
-onShow(hideSystemTabBar)
+onShow(() => {
+	hideSystemTabBar()
+})
 </script>
 
 <style lang="scss">

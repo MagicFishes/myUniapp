@@ -97,6 +97,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
     };
     hideSystemTabBar();
+    common_vendor.watch(
+      () => resolvedActive.value,
+      () => {
+        hideSystemTabBar();
+      }
+    );
     const handleSelect = (item) => {
       var _a2;
       const targetPath = resolveItemPath(item);
