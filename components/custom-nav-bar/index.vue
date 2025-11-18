@@ -27,7 +27,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, toRefs } from 'vue'
+import { computed, toRefs, getCurrentInstance } from 'vue'
 import navMetrics from '../../utils/utils.js'
 
 type CustomNavBarProps = {
@@ -63,19 +63,50 @@ const navBarStyle = computed(() => {
 	}
 })
 
-const uni = (globalThis as any).uni
-
 const handleBack = () => {
-	emit('back')
-
 	if (!showBackButton.value) {
 		return
 	}
 
-	if (autoBack.value && uni?.navigateBack) {
-		uni.navigateBack({
-			delta: 1
-		})
+	// 默认执行返回逻辑
+	const performBack = () => {
+		if (autoBack.value) {
+			// 使用全局的 uni 对象
+			if (typeof uni !== 'undefined' && uni.navigateBack) {
+				const pages = getCurrentPages()
+				if (pages.length > 1) {
+					uni.navigateBack({
+						delta: 1
+					})
+				} else {
+					// 如果没有上一页，跳转到首页
+					uni.redirectTo({
+						url: '/pages/home/index'
+					})
+				}
+			}
+		}
+	}
+
+	// 检查是否有监听 back 事件
+	// 如果有监听，emit 事件（让父组件可以做一些额外处理）
+	// 无论是否有监听，都执行默认返回（除非 autoBack 为 false）
+	try {
+		const instance = getCurrentInstance()
+		// 检查是否有监听 back 事件（通过 vnode.props 或 context.attrs）
+		if (instance) {
+			// 在 Vue 3 中，可以通过 instance.vnode.props 检查
+			const hasListener = instance.vnode?.props && ('onBack' in instance.vnode.props)
+			if (hasListener) {
+				// 如果有监听 back 事件，emit 事件
+				emit('back')
+			}
+		}
+		// 执行默认返回逻辑
+		performBack()
+	} catch (e) {
+		// 如果检查失败，直接执行默认返回
+		performBack()
 	}
 }
 </script>

@@ -58,6 +58,24 @@
 				"navigationBarTitleText": "订单详情"
 			}
 		}]
+	}, {
+		"root": "subpackages/search",
+		"pages": [{
+			"path": "pages/index",
+			"style": {
+				"navigationBarTitleText": "酒店搜索",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTextStyle": "black"
+			}
+		}, {
+			"path": "pages/list",
+			"style": {
+				"navigationBarTitleText": "酒店列表",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			}
+		}]
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

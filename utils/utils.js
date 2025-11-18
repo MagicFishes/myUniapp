@@ -44,7 +44,18 @@ const computeSafeTopHeight = () => {
 }
 
 /**
- * 计算小程序/多端顶部胶囊按钮区域高度，失败时回退默认高度。
+ * 计算小程序/多端顶部导航栏内容区域高度（不包括状态栏），失败时回退默认高度。
+ * 
+ * 问题说明：
+ * getMenuButtonBoundingClientRect() 返回的 rect.height 只是胶囊按钮本身的高度，
+ * 不包括胶囊按钮上下方的间距。如果直接用 rect.height，会导致导航栏高度计算不准确。
+ * 
+ * 注意：rect.top 是胶囊按钮距离窗口顶部的距离，已经包含了状态栏的高度。
+ * 
+ * 正确的计算方式：
+ * 导航栏内容区域高度 = 胶囊按钮在导航栏内的上边距 + height（胶囊高度）+ 下边距
+ * 由于胶囊按钮在导航栏内通常是垂直居中的，所以：
+ * 导航栏内容区域高度 = (top - 状态栏高度) * 2 + height
  */
 const computeCustomNavBarHeight = () => {
 	const api = getPlatformApi()
@@ -53,7 +64,23 @@ const computeCustomNavBarHeight = () => {
 	try {
 		const rect = api.getMenuButtonBoundingClientRect()
 		if (rect && typeof rect.height === 'number' && rect.height > 0) {
-			return rect.height
+			const top = typeof rect.top === 'number' ? rect.top : 0
+			const height = rect.height
+			
+			// 获取状态栏高度
+			const safeTopHeight = computeSafeTopHeight()
+			
+			// 计算胶囊按钮在导航栏内容区域内的上边距
+			const topMargin = top - safeTopHeight
+			
+			// 如果上边距大于0，说明胶囊按钮在导航栏内有间距
+			// 导航栏内容区域高度 = 上边距 * 2 + height（上下间距相等）
+			if (topMargin > 0) {
+				return topMargin * 2 + height
+			}
+			
+			// 如果上边距为0或负数，说明胶囊按钮紧贴状态栏，只返回胶囊高度
+			return height
 		}
 	} catch (error) {
 		// ignore and fall back

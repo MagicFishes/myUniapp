@@ -237,7 +237,7 @@ defineExpose({
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
-	z-index: 9999;
+	z-index:100;
 	background-color: #ffffff; // 添加背景色，避免内容透过
 
 	&.has-border {
