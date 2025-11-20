@@ -21,7 +21,8 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		},
 		selectedHotel: null, // 选中的酒店对象
 		calendarShow: false, // 日历弹窗显示状态
-		calendarMode: 'range' // 日历模式：range-日期范围选择
+		calendarMode: 'range', // 日历模式：range-日期范围选择
+		personCount: 1 // 人数（默认1人）
 	}),
 	getters: {
 		// 获取完整的搜索信息对象
@@ -39,7 +40,9 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 获取日历弹窗显示状态
 		getCalendarShow: (state) => state.calendarShow,
 		// 获取日历模式
-		getCalendarMode: (state) => state.calendarMode
+		getCalendarMode: (state) => state.calendarMode,
+		// 获取人数
+		getPersonCount: (state) => state.personCount
 	},
 	actions: {
 		// 设置完整的搜索信息对象
@@ -89,6 +92,18 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 设置日历模式
 		setCalendarMode(mode) {
 			this.calendarMode = mode
+		},
+		// 设置人数
+		setPersonCount(count) {
+			this.personCount = count
+		},
+		// 增加人数（不限制最大值，由组件控制）
+		increasePersonCount() {
+			this.personCount++
+		},
+		// 减少人数（不限制最小值，由组件控制）
+		decreasePersonCount() {
+			this.personCount--
 		}
 	}
 })

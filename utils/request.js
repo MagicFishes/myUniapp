@@ -28,6 +28,20 @@ const safeGetToken = () => {
 	return ''
 }
 
+const safeSetToken = (token) => {
+	try {
+		if (typeof uni !== 'undefined' && uni.setStorageSync) {
+			uni.setStorageSync(STORAGE_TOKEN_KEY, token)
+			return
+		}
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(STORAGE_TOKEN_KEY, token)
+		}
+	} catch (error) {
+		console.warn('set token failed', error)
+	}
+}
+
 const safeClearToken = () => {
 	try {
 		if (typeof uni !== 'undefined' && uni.removeStorageSync) {
@@ -62,7 +76,14 @@ instance.interceptors.request.use(
 )
 
 instance.interceptors.response.use(
-	(response) => response,
+	(response) => {
+		// 登录时从响应头获取 token 并保存
+		const token = response.headers.authorization || response.headers.Authorization
+		if (response?.config?.url === '/auth/login' && token) {
+			safeSetToken(token)
+		}
+		return response
+	},
 	(error) => {
 		const { response } = error
 		if (!response) {

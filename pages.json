@@ -75,6 +75,21 @@
 				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
+		}, {
+			"path": "pages/detail",
+			"style": {
+				"navigationBarTitleText": "酒店详情",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			}
+		}, {
+			"path": "pages/booking",
+			"style": {
+				"navigationBarTitleText": "填写订单信息",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTextStyle": "black"
+			}
 		}]
 	}],
 	"globalStyle": {

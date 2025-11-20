@@ -43,15 +43,15 @@ const handleClick = () => {
     <!-- 左中右布局 -->
     <view @click="handleClick" class="choose-time-data" :style="{ height: props.height + 'rpx' }"    >
         <view class="choose-time-data-left">
-            <span class="choose-time-data-left-text">{{ checkInDateDisplay }}</span>
-            <span class="choose-time-data-left-text">入住</span>
+            <span class="choose-time-data-left-date">{{ checkInDateDisplay }}</span>
+            <span class="choose-time-data-left-label">入住</span>
         </view>
         <view class="choose-time-data-center">
             <span class="choose-time-data-center-text">{{ diffDays }}晚</span>
         </view>
         <view class="choose-time-data-right">
-            <span class="choose-time-data-right-text">{{ checkOutDateDisplay }}</span>
-            <span class="choose-time-data-right-text">离店</span>
+            <span class="choose-time-data-right-date">{{ checkOutDateDisplay }}</span>
+            <span class="choose-time-data-right-label">离店</span>
         </view>
     </view>
 </template>
@@ -68,24 +68,26 @@ const handleClick = () => {
     align-items: center;
     .choose-time-data-left{
         display: flex;
+        flex-direction: column;
         flex: 1;
-        justify-content: space-start;
-        align-items: center;
+        justify-content: center;
+        align-items: flex-start;
         font-weight: bold;
-            letter-spacing: 2rpx;
-        }
-        .choose-time-data-left-text{
+        letter-spacing: 2rpx;
+        .choose-time-data-left-date{
             font-size: 28rpx;
             font-weight: bold;
             letter-spacing: 2rpx;
-            color: #999;
+            color: #333;
+            margin-bottom: 4rpx;
         }
-        .choose-time-data-left-text{
-            font-size: 28rpx;
-            font-weight: bold;
+        .choose-time-data-left-label{
+            font-size: 24rpx;
+            font-weight: normal;
             letter-spacing: 2rpx;
             color: #999;
         }
+    }
     .choose-time-data-center{
         display: flex;
         flex: 1;
@@ -94,22 +96,33 @@ const handleClick = () => {
         font-weight: bold;
         letter-spacing: 2rpx;
         .choose-time-data-center-text{
-            font-size: 28rpx;
+            font-size: 24rpx;
             font-weight: bold;
             letter-spacing: 2rpx;
             color: #999;
+            background-color: #f0f0f0;
+            padding: 5rpx 20rpx;
+            border-radius: 20rpx;
         }
     }
     .choose-time-data-right{
         display: flex;
+        flex-direction: column;
         flex: 1;
-        justify-content: space-end;
-        align-items: center;
+        justify-content: center;
+        align-items: flex-end;
         font-weight: bold;
         letter-spacing: 2rpx;
-        .choose-time-data-right-text{
+        .choose-time-data-right-date{
             font-size: 28rpx;
             font-weight: bold;
+            letter-spacing: 2rpx;
+            color: #333;
+            margin-bottom: 4rpx;
+        }
+        .choose-time-data-right-label{
+            font-size: 24rpx;
+            font-weight: normal;
             letter-spacing: 2rpx;
             color: #999;
         }

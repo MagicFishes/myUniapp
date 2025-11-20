@@ -44,7 +44,7 @@
 					class="hotel-item-wrapper"
 					@click="handleSelectHotel(item)"
 				>
-					<HotelItem :item="item" />
+					<searchHotelItem :item="item" />
 				</view>
 
 				<!-- 空状态 -->
@@ -145,7 +145,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { useHotelSearchStore } from '@/store/useHotelSearchStore';
-import HotelItem from '@/components/hotel-item/index.vue';
+import searchHotelItem from '@/components/search-hotel-item/index.vue';
 import customNavBar from '@/components/custom-nav-bar/index.vue';
 import CalendarPopup from '@/components/calendar-popup/index.vue';
 import utils from '@/utils/utils';
@@ -326,8 +326,12 @@ const handleSelectHotel = (hotel: any) => {
 	}
 	
 	// 返回上一页
-	uni.navigateBack({
-		delta: 1
+	// uni.navigateBack({
+	// 	delta: 1
+	// });
+	// 	跳转到酒店详情页面
+	uni.navigateTo({
+		url: `/subpackages/search/pages/detail?id=${hotel.id}`
 	});
 };
 
