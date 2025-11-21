@@ -81,14 +81,14 @@ const props = withDefaults(defineProps<TabBarProps>(), {
 			iconPath: '/static/tabbar/home.png',
 			selectedIconPath: '/static/tabbar/home-active.png'
 		},
-		{
-			key: 'brand',
-			text: '品牌',
-			path: '/pages/brand/index',
-			pagePath: 'pages/brand/index',
-			iconPath: '/static/tabbar/brand.png',
-			selectedIconPath: '/static/tabbar/brand-active.png'
-		},
+		// {
+		// 	key: 'brand',
+		// 	text: '品牌',
+		// 	path: '/pages/brand/index',
+		// 	pagePath: 'pages/brand/index',
+		// 	iconPath: '/static/tabbar/brand.png',
+		// 	selectedIconPath: '/static/tabbar/brand-active.png'
+		// },
 		{
 			key: 'mine',
 			text: '我的',

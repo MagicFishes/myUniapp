@@ -69,12 +69,13 @@ const increase = () => {
 
 <style scoped lang="scss">
 .person-counter {
+	width: 100%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 10rpx;
 	height: 100%;
-	
+	flex-wrap: nowrap;
 	.counter-btn {
 		width: 40rpx;
 		height: 40rpx;

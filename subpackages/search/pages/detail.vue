@@ -124,7 +124,13 @@
 			<!-- 预订信息 -->
 			<view class="booking-info" v-if="hotelDetail && !isLoading">
 				<view class="booking-dates" @click="handleOpenCalendar">
-					<ChooseTimeData :height="100"></ChooseTimeData>
+					<view class="booking-dates-time">
+						<ChooseTimeData :height="100"></ChooseTimeData>
+					</view>
+					<view class="booking-dates-line"></view>
+					<view class="booking-dates-person">
+						<personCounter></personCounter>
+					</view>
 				</view>
 				<!-- 酒店房型信息 -->
 				<!-- v-if="roomList && roomList.length > 0" -->
@@ -148,6 +154,7 @@ import customNavBar from '@/components/custom-nav-bar/index.vue';
 import ChooseTimeData from '@/components/choose-time-data/index.vue';
 import CalendarPopup from '@/components/calendar-popup/index.vue';
 import HotelRoomItem from '@/components/hotel-room-item/index.vue';
+import personCounter from '@/components/person-counter/index.vue';
 import utils from '@/utils/utils';
 const hotelSearchStore = useHotelSearchStore();
 
@@ -797,41 +804,34 @@ onLoad((options) => {
 		.booking-dates {
 			display: flex;
 			width: 100%;
+			height: 100rpx;
+			justify-content: space-between;
 			align-items: stretch;
-			justify-content: center;
-			gap: 20rpx;
-			flex-direction: column;
+			border-bottom: 1rpx solid #e5e5e5;
+
+			.booking-dates-time {
+				flex: 1;
+			}
+
+			.booking-dates-line {
+				width: 0;
+				height: 50rpx;
+				align-self: center;
+				border-left: 1rpx solid #e2e0e0;
+				flex-shrink: 0;
+				margin-right: 10rpx;
+				margin-left: 10rpx;
+			}
+
+			.booking-dates-person {
+				width: 200rpx;
+				flex-shrink: 0;
+			}
 
 			// ChooseTimeData 组件样式
 			:deep(.choose-time-data) {
 				width: 100%;
-				flex: 1;
-				flex-shrink: 0;
-				align-self: stretch;
-			}
-
-			.booking-date-item {
-				flex: 1;
-				display: flex;
-				flex-direction: column;
-				gap: 10rpx;
-
-				.date-label {
-					font-size: 24rpx;
-					color: #999;
-				}
-
-				.date-value {
-					font-size: 28rpx;
-					font-weight: 500;
-					color: #333;
-				}
-			}
-
-			.booking-date-separator {
-				padding: 0 20rpx;
-				font-size: 24rpx;
-				color: #666;
+				height: 100%;
 			}
 		}
 	}

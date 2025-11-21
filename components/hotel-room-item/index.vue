@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import HotelRoomDetails from '@/components/hotel-room-details/index.vue';
 
 interface RoomItem {
 	id: string;
@@ -179,7 +178,7 @@ const expandedRooms = ref<Set<string>>(new Set());
 // 切换折叠状态
 const toggleExpand = (roomId: string, event?: any) => {
 	if (event) {
-		event.stopPropagation(); // 阻止事件冒泡，避免触发房型点击
+		event.stopPropagation(); // 阻止事件冒泡，避免触发其他事件
 	}
 	if (expandedRooms.value.has(roomId)) {
 		expandedRooms.value.delete(roomId);
@@ -188,110 +187,204 @@ const toggleExpand = (roomId: string, event?: any) => {
 	}
 };
 
+// 处理整个item的点击（只有多个价格方案时才可点击）
+const handleItemClick = (room: RoomItem, event?: any) => {
+	if (room.hotelRoomDetails && room.hotelRoomDetails.length > 1) {
+		toggleExpand(room.id, event);
+	}
+};
+
+// 格式化价格显示
+const formatPrice = (price: number): string => {
+	if (!price || price === 0) return '--';
+	return Number(price).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+};
+
+// 获取房间图片列表
+const getRoomImages = (room: RoomItem): string[] => {
+	if (room.formatImages && room.formatImages.length > 0) {
+		return room.formatImages;
+	}
+	if (room.image) {
+		const images = room.image.split(',').filter(img => img.trim());
+		return images;
+	}
+	return [];
+};
+
 // 判断是否展开
 const isExpanded = (roomId: string) => {
 	return expandedRooms.value.has(roomId);
 };
 
-// 处理价格详情预订
-const handleDetailConfirm = (room: RoomItem, detail: any) => {
-	emit('clickRoom', { room, detail });
+// 处理预订
+const handleBook = (room: RoomItem, detail?: any) => {
+	if (detail) {
+		emit('clickRoom', { room, detail });
+	} else {
+		const lowestPriceDetail = room.hotelRoomDetails?.[0];
+		if (lowestPriceDetail) {
+			emit('clickRoom', { room, detail: lowestPriceDetail });
+		} else {
+			emit('clickRoom', room);
+		}
+	}
+};
+
+// 处理分享
+const handleShare = (room: RoomItem, event?: any) => {
+	if (event) {
+		event.stopPropagation();
+	}
+	// TODO: 实现分享功能
+	console.log('分享房间', room);
+};
+
+// 处理担保
+const handleGuarantee = (room: RoomItem, event?: any) => {
+	if (event) {
+		event.stopPropagation();
+	}
+	// TODO: 实现担保功能
+	console.log('担保房间', room);
+};
+
+// 轮播图当前索引
+const currentImageIndex = ref<Record<string, number>>({});
+
+// 设置轮播图索引
+const setImageIndex = (roomId: string, e: any) => {
+	// up-swiper 的 change 事件可能返回索引或对象，需要根据实际情况处理
+	let index = 0;
+	if (typeof e === 'number') {
+		index = e;
+	} else if (e && typeof e === 'object' && e.current !== undefined) {
+		index = e.current;
+	} else if (e && typeof e === 'object' && e.detail && e.detail.current !== undefined) {
+		index = e.detail.current;
+	}
+	currentImageIndex.value[roomId] = index;
+};
+
+// 获取当前索引
+const getCurrentIndex = (roomId: string) => {
+	return currentImageIndex.value[roomId] || 0;
 };
 </script>
 
 <template>
-    <!-- v-if="displayRoomList && displayRoomList.length > 0" -->
-	<view class="hotel-room-list" >
+	<view class="hotel-room-list">
 		<view 
 			v-for="room in displayRoomList" 
 			:key="room.id" 
 			class="room-item"
 		>
-			<view class="room-item-content">
-				<!-- 左侧图片 -->
-				<view class="room-item-left">
-					<image 
-						:src="getMainImage(room)" 
-						mode="aspectFill" 
-						class="room-image"
-					></image>
-				</view>
-				
-				<!-- 右侧内容区域（上下结构） -->
-				<view class="room-item-right">
-				<!-- 上半部分：房型信息 -->
-				<view class="room-info-top">
-					<!-- 房型名称 -->
-					<view class="room-name-section">
-						<text class="room-name">{{ room.name || '' }}</text>
-					</view>
-					<!-- 英文名 -->
-					<view class="room-name-en" v-if="room.nameEn">
-						<text>{{ room.nameEn }}</text>
-					</view>
-					<!-- 设施信息 -->
-					<view class="room-amenities" v-if="getValidAmenities(room.formatAmenities || []).length > 0">
-						<view 
-							v-for="(amenity, index) in getValidAmenities(room.formatAmenities || [])" 
-							:key="index"
-							class="amenity-item"
-						>
-							<text>{{ amenity.text }}：{{ amenity.value }}</text>
-						</view>
-					</view>
-				</view>
-				
-				<!-- 下半部分：价格和预订 -->
-				<view class="room-info-bottom">
-					<view v-if="getLowestPrice(room)" class="price-section">
-						<!-- 左侧价格信息 -->
-						<view class="price-info-left">
-							<!-- 价格 -->
-							<view class="room-price">
-								<text class="price-unit">{{ getLowestPrice(room)?.unit || 'CNY' }}</text>
-								<text class="price-value">{{ getLowestPrice(room)?.price || '--' }}</text>
+			<!-- 上半部分：轮播图 -->
+			<view class="room-image-section" v-if="getRoomImages(room).length > 0">
+				<up-swiper 
+					:circular="getRoomImages(room).length > 1"
+					:indicatorMode="'dot'"
+					:indicatorStyle="{ bottom: '20rpx', right: '20rpx' }"
+					:indicator="getRoomImages(room).length > 1"
+					height="400rpx"
+					:list="getRoomImages(room)"
+					mode="aspectFill"
+					@change="(e) => setImageIndex(room.id, e)"
+				></up-swiper>
+			</view>
+			
+			<!-- 下半部分：信息区域 -->
+			<view class="room-info-section">
+				<!-- 主信息区域：左侧信息 + 右侧按钮 -->
+				<view 
+					class="room-info-main"
+					:class="{ 'clickable': room.hotelRoomDetails && room.hotelRoomDetails.length > 1 }"
+					hover-class="none"
+					hover-stop-propagation="true"
+					@click="handleItemClick(room, $event)"
+				>
+					<!-- 左侧信息区域 -->
+					<view class="room-info-left">
+						<!-- 第一行：房型名称（左）和价格（右） -->
+						<view class="room-info-row-first">
+							<view class="room-name-wrapper">
+								<text class="room-name">{{ room.name || '' }}</text>
 							</view>
-							<!-- 价格说明 -->
-							<view class="price-desc">
-								<text>起/每晚</text>
-								<text>包含税金和额外费用</text>
+							<view class="room-price-wrapper" v-if="getLowestPrice(room)">
+								<text class="price-symbol">¥</text>
+								<text class="price-value">{{ formatPrice(getLowestPrice(room)?.price || 0) }}</text>
+								<text class="price-suffix">起＞</text>
 							</view>
 						</view>
-						<!-- 右侧按钮：选择价格或立即预订 -->
-						<view 
-							v-if="room.hotelRoomDetails && room.hotelRoomDetails.length > 1"
-							class="select-price-btn"
-							@click.stop="toggleExpand(room.id, $event)"
-						>
-							<text>{{ isExpanded(room.id) ? '隐藏价格' : '选择价格' }}</text>
-							<uni-icons 
-								:type="isExpanded(room.id) ? 'up' : 'down'" 
-								size="14" 
-								color="#fff"
-							></uni-icons>
+						
+						<!-- 英文名 -->
+						<view class="room-name-en" v-if="room.nameEn">
+							<text>{{ room.nameEn }}</text>
 						</view>
-						<view v-else class="book-btn">
-							<text>立即预订</text>
+						
+						<!-- 第二行开始：设施信息 -->
+						<view class="room-amenities-section" v-if="getValidAmenities(room.formatAmenities || []).length > 0">
+							<view 
+								v-for="(amenity, index) in getValidAmenities(room.formatAmenities || [])" 
+								:key="index"
+								class="amenity-item"
+							>
+								<text>{{ amenity.text }}：{{ amenity.value }}</text>
+							</view>
 						</view>
-					</view>
-					<view v-else class="sold-out-wrapper">
-						<view class="sold-out">
+						
+						<!-- 满房提示 -->
+						<view v-if="!getLowestPrice(room)" class="sold-out-hint">
 							<text>酒店满房</text>
 						</view>
 					</view>
+					
 				</view>
-			</view>
-			</view>
-			<!-- 展开的价格详情列表（与整个 room-item 平齐） -->
-			<view 
-				class="price-details-wrapper"
-				v-if="isExpanded(room.id) && room.hotelRoomDetails && room.hotelRoomDetails.length > 1"
-			>
-				<HotelRoomDetails 
-					:roomDetails="room.hotelRoomDetails"
-					:formatAmenities="room.formatAmenities || []"
-					@confirm="(detail) => handleDetailConfirm(room, detail)"
-				/>
+				
+				<!-- 展开后的价格详情区域 -->
+				<view 
+					class="expanded-price-details"
+					v-if="isExpanded(room.id) && room.hotelRoomDetails && room.hotelRoomDetails.length > 0"
+				>
+					<!-- 价格方案列表 -->
+					<view class="price-plans">
+						<view 
+							v-for="(detail, index) in room.hotelRoomDetails" 
+							:key="detail.id || index"
+							class="price-plan-item"
+						>
+							<!-- 左侧：价格名称和房型信息 -->
+							<view class="plan-info-left">
+								<view class="plan-name">{{ detail.name || '标准价格' }}</view>
+								<!-- 房型信息（设施信息） -->
+								<view class="plan-amenities" v-if="getValidAmenities(room.formatAmenities || []).length > 0">
+									<view 
+										v-for="(amenity, amenityIndex) in getValidAmenities(room.formatAmenities || [])" 
+										:key="amenityIndex"
+										class="amenity-item"
+									>
+										<text>{{ amenity.text }}：{{ amenity.value }}</text>
+									</view>
+								</view>
+							</view>
+							
+							<!-- 右侧：价格和预订按钮 -->
+							<view class="plan-info-right">
+								<view class="plan-price">
+									<text class="plan-price-symbol">¥</text>
+									<text class="plan-price-value">{{ formatPrice(detail.totalPriceCny) }}</text>
+									<text class="plan-price-unit">{{ detail.priceUnit || 'CNY' }}</text>
+								</view>
+								<view 
+									class="plan-book-btn"
+									@click.stop="handleBook(room, detail)"
+								>
+									<text>预订</text>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -308,233 +401,401 @@ const handleDetailConfirm = (room: RoomItem, detail: any) => {
 .room-item {
 	display: flex;
 	flex-direction: column;
-	min-height: 180rpx;
-	margin-bottom: 20rpx;
 	width: 100%;
 	overflow: visible;
 	background-color: #fff;
 	border-radius: 12rpx;
-	padding: 20rpx;
+	padding: 0;
 	box-sizing: border-box;
-	
-	.room-item-content {
-		display: flex;
-		justify-content: space-between;
-		width: 100%;
-	}
 }
 
-.room-item-left {
-	width: 240rpx;
-	flex-shrink: 0;
+// 上半部分：轮播图
+.room-image-section {
+	width: 100%;
 	overflow: hidden;
-	border-radius: 8rpx;
-	align-self: stretch;
-	display: flex;
-	
-	.room-image {
-		width: 100%;
-		height: 100%;
-		display: block;
-		object-fit: cover;
-	}
+	border-radius: 12rpx 12rpx 0 0;
 }
 
-.room-item-right {
-	flex: 1;
+// 下半部分：信息区域
+.room-info-section {
+	width: 100%;
+	padding: 24rpx;
+	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	padding: 0 20rpx;
-	box-sizing: border-box;
-	min-width: 0;
+	gap: 16rpx;
+}
+
+// 主信息区域：左侧信息 + 右侧按钮
+.room-info-main {
+	display: flex;
+	flex-direction: row;
 	justify-content: space-between;
+	align-items: flex-start;
+	width: 100%;
+	gap: 20rpx;
 	
-	.room-info-top {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
+	&.clickable {
+		cursor: pointer;
+		transition: opacity 0.2s;
+		-webkit-tap-highlight-color: transparent;
 		
-		.room-name-section {
-			width: 100%;
+		&:active {
+			opacity: 0.8;
+		}
+	}
+}
+
+// 左侧信息区域
+.room-info-left {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+}
+
+// 第一行：房型名称（左）和价格（右）
+.room-info-row-first {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: flex-start;
+	width: 100%;
+	gap: 20rpx;
+	
+	.room-name-wrapper {
+		flex: 1;
+		min-width: 0;
+		
+		.room-name {
 			font-size: 28rpx;
-			margin-bottom: 8rpx;
-			
-			.room-name {
-				font-size: 28rpx;
-				font-weight: 500;
-				color: #333;
-				line-height: 1.4;
-			}
+			font-weight: 500;
+			color: #333;
+			line-height: 1.4;
+			word-break: break-word;
+		}
+	}
+	
+	.room-price-wrapper {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 4rpx;
+		
+		.price-symbol {
+			font-size: 24rpx;
+			font-weight: bold;
+			color: #FF8C00;
+			align-self: flex-start;
+			margin-top: 4rpx;
 		}
 		
-		.room-name-en {
-			width: 100%;
+		.price-value {
+			font-size: 32rpx;
+			font-weight: bold;
+			color: #FF8C00;
+		}
+		
+		.price-suffix {
 			font-size: 24rpx;
-			margin-bottom: 12rpx;
-			color: #c8cacf;
+			color: #333;
+		}
+	}
+}
+
+// 英文名
+.room-name-en {
+	font-size: 22rpx;
+	color: #c8cacf;
+	line-height: 1.4;
+	word-break: break-word;
+	
+	text {
+		font-size: 22rpx;
+		color: #c8cacf;
+	}
+}
+
+// 第二行开始：设施信息
+.room-amenities-section {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 12rpx;
+	align-items: center;
+	
+	.amenity-item {
+		font-size: 24rpx;
+		color: #7a7a7a;
+		white-space: nowrap;
+		
+		text {
+			font-size: 24rpx;
+			color: #7a7a7a;
+		}
+	}
+}
+
+// 展开提示
+.expand-hint {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 8rpx;
+	padding: 8rpx 0;
+	font-size: 22rpx;
+	color: #999;
+	cursor: pointer;
+	
+	text {
+		font-size: 22rpx;
+		color: #999;
+	}
+}
+
+// 满房提示
+.sold-out-hint {
+	font-size: 24rpx;
+	color: #999;
+	padding: 8rpx 0;
+	
+	text {
+		font-size: 24rpx;
+		color: #999;
+	}
+}
+
+// 右侧按钮区域（垂直堆叠）
+.room-actions-right {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+	align-items: flex-end;
+	
+	.action-btn {
+		width: 120rpx;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 6rpx;
+		padding: 12rpx 20rpx;
+		border-radius: 8rpx;
+		font-size: 24rpx;
+		
+		text {
+			font-size: 24rpx;
+		}
+		
+		&.share-btn {
+			background-color: #D4C4A8;
+			color: #8B7355;
 			
 			text {
-				font-size: 24rpx;
-				color: #c8cacf;
+				color: #8B7355;
 			}
 		}
 		
-		.room-amenities {
-			display: flex;
-			flex-direction: row;
-			flex-wrap: wrap;
-			gap: 12rpx;
-			align-items: center;
+		&.book-btn {
+			background-color: #D4C4A8;
+			color: #8B7355;
 			
-			.amenity-item {
-				font-size: 24rpx;
-				color: #7a7a7a;
-				white-space: nowrap;
+			text {
+				color: #8B7355;
+			}
+		}
+		
+		&.guarantee-btn {
+			background-color: #fff;
+			color: #8B7355;
+			border: 1rpx solid #D4C4A8;
+			
+			text {
+				color: #8B7355;
+			}
+		}
+	}
+}
+
+// 展开后的价格详情区域
+.expanded-price-details {
+	width: 100%;
+	margin-top: 20rpx;
+	padding-top: 20rpx;
+	border-top: 1rpx solid #f0f0f0;
+	display: flex;
+	flex-direction: column;
+	gap: 20rpx;
+}
+
+// 展开后的按钮区域
+.action-buttons-expanded {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	gap: 12rpx;
+	
+	.action-btn {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 6rpx;
+		padding: 12rpx 24rpx;
+		border-radius: 8rpx;
+		font-size: 24rpx;
+		
+		text {
+			font-size: 24rpx;
+		}
+		
+		&.share-btn {
+			background-color: #D4C4A8;
+			color: #8B7355;
+			
+			text {
+				color: #8B7355;
+			}
+		}
+		
+		&.book-btn {
+			background-color: #D4C4A8;
+			color: #8B7355;
+			
+			text {
+				color: #8B7355;
+			}
+		}
+		
+		&.guarantee-btn {
+			background-color: #fff;
+			color: #8B7355;
+			border: 1rpx solid #D4C4A8;
+			
+			text {
+				color: #8B7355;
+			}
+		}
+	}
+}
+
+// 价格方案列表
+.price-plans {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	
+	.price-plan-item {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-start;
+		padding: 24rpx 0;
+		border-bottom: 1rpx solid #f0f0f0;
+		gap: 20rpx;
+		
+		&:last-child {
+			border-bottom: none;
+		}
+		
+		.plan-info-left {
+			flex: 1;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 12rpx;
+			
+			.plan-name {
+				font-size: 30rpx;
+				font-weight: bold;
+				color: #333;
+				line-height: 1.5;
+			}
+			
+			.plan-amenities {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+				gap: 16rpx;
+				align-items: center;
 				
-				text {
+				.amenity-item {
 					font-size: 24rpx;
-					color: #7a7a7a;
+					color: #666;
+					white-space: nowrap;
+					
+					text {
+						font-size: 24rpx;
+						color: #666;
+						line-height: 1.5;
+					}
 				}
 			}
 		}
-	}
-	
-	.room-info-bottom {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		margin-top: 20rpx;
-		width: 100%;
 		
-		.price-section {
-			width: 100%;
+		.plan-info-right {
+			flex-shrink: 0;
 			display: flex;
-			flex-direction: row;
-			justify-content: space-between;
+			flex-direction: column;
 			align-items: flex-end;
-		}
-		
-		.price-info-left {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: flex-start;
-			min-width: 0;
-		}
-		
-		.room-price {
-			display: flex;
-			justify-content: flex-start;
-			align-items: baseline;
-			margin-bottom: 8rpx;
+			gap: 16rpx;
 			
-			.price-unit {
-				font-size: 24rpx;
-				color: #333;
-				margin-right: 4rpx;
+			.plan-price {
+				display: flex;
+				flex-direction: row;
+				align-items: baseline;
+				gap: 6rpx;
+				
+				.plan-price-symbol {
+					font-size: 28rpx;
+					color: #FF8C00;
+					line-height: 1;
+					align-self: flex-start;
+					margin-top: 4rpx;
+				}
+				
+				.plan-price-value {
+					font-size: 32rpx;
+					color: #FF8C00;
+					line-height: 1;
+				}
+				
+				.plan-price-unit {
+					font-size: 24rpx;
+					color: #999;
+					line-height: 1;
+				}
 			}
 			
-			.price-value {
-				font-size: 32rpx;
-				font-weight: bold;
-				color: #333;
-			}
-		}
-		
-		.price-details-wrapper {
-			width: 100%;
-			margin-top: 20rpx;
-			align-self: stretch;
-			box-sizing: border-box;
-		}
-		
-		.price-desc {
-			display: flex;
-			flex-direction: column;
-			align-items: flex-start;
-			margin-top: 5rpx;
-			
-			text {
-				font-size: 22rpx;
-				color: #c4c4c4;
-				letter-spacing: 1rpx;
-			}
-		}
-		
-		.book-btn {
-			width: 130rpx;
-			height: 60rpx;
-			background-color: #000;
-			color: #fff;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			border-radius: 8rpx;
-			font-size: 24rpx;
-			flex-shrink: 0;
-			margin-left: 20rpx;
-			
-			text {
-				font-size: 24rpx;
-				color: #fff;
-			}
-		}
-		
-		.select-price-btn {
-			width: 150rpx;
-			height: 60rpx;
-			background-color: #000;
-			color: #fff;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			border-radius: 8rpx;
-			font-size: 24rpx;
-			flex-shrink: 0;
-			margin-left: 20rpx;
-			gap: 8rpx;
-			
-			text {
-				font-size: 24rpx;
-				color: #fff;
-			}
-		}
-		
-		.sold-out-wrapper {
-			width: 100%;
-			display: flex;
-			justify-content: flex-end;
-		}
-		
-		.sold-out {
-			width: 130rpx;
-			height: 60rpx;
-			background-color: #fff;
-			color: #000;
-			border: 1rpx solid #969696;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			border-radius: 8rpx;
-			position: relative;
-			font-size: 24rpx;
-			
-			&::before {
-				content: '';
-				position: absolute;
-				left: 0;
-				top: 0;
-				width: 100%;
-				height: 100%;
-				background-color: rgba(255, 255, 255, 0.6);
-				backdrop-filter: blur(2rpx);
-			}
-			
-			text {
-				font-size: 24rpx;
-				color: #000;
-				position: relative;
-				z-index: 1;
+			.plan-book-btn {
+				width: 130rpx;
+				height: 64rpx;
+				background: linear-gradient(135deg, #ebbe8b 0%, #dd9d3d 50%, #eed3aa 100%);
+				color: #ffffff;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				border-radius: 8rpx;
+				font-size: 26rpx;
+				cursor: pointer;
+				transition: all 0.3s;
+				// border: 1rpx solid rgba(255, 215, 0, 0.3);
+				box-shadow: 0 2rpx 8rpx rgba(255, 215, 0, 0.2);
+				
+				&:active {
+					opacity: 0.9;
+					transform: scale(0.98);
+					box-shadow: 0 1rpx 4rpx rgba(255, 215, 0, 0.3);
+				}
+				
+				text {
+					font-size: 26rpx;
+					color: #ffffff;
+					font-weight: 500;
+				}
 			}
 		}
 	}

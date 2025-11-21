@@ -75,7 +75,7 @@ const handleClick = () => {
         font-weight: bold;
         letter-spacing: 2rpx;
         .choose-time-data-left-date{
-            font-size: 28rpx;
+            font-size: 26rpx;
             font-weight: bold;
             letter-spacing: 2rpx;
             color: #333;
@@ -114,7 +114,7 @@ const handleClick = () => {
         font-weight: bold;
         letter-spacing: 2rpx;
         .choose-time-data-right-date{
-            font-size: 28rpx;
+            font-size: 26rpx;
             font-weight: bold;
             letter-spacing: 2rpx;
             color: #333;

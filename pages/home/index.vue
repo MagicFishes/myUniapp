@@ -30,7 +30,6 @@
 						<view class="content-search-date-line"></view>
 						<view class="content-search-date-person">
 						<personCounter></personCounter>
-
 						</view>
 					</view>
 					<view class="content-search-hotel">
@@ -314,10 +313,15 @@ const hotelItemList = reactive([
 						margin-left: 10rpx;
 
 					}
-					.content-search-date-person {
-						// flex: ;
-						width: 180rpx;
-					}
+				.content-search-date-person {
+					// flex: ;
+					min-width: 180rpx;
+					// height: 100%; // 移除，让 flexbox 的 align-items: stretch 自然拉伸
+					display: flex;
+					flex-wrap: nowrap;
+					justify-content: center;
+					align-items: center;
+				}
 				}
 
 				.content-search-hotel {

@@ -10,7 +10,7 @@
 			class="page-content"
 			:style="pageContentStyle"
 		>
-			<view class="section-header">
+			<!-- <view class="section-header">
 				<text class="section-title">个人中心</text>
 				<view
 					class="header-link"
@@ -23,7 +23,7 @@
 					/>
 					<text>编辑资料</text>
 				</view>
-			</view>
+			</view> -->
 
 			<view class="profile">
 				<view class="avatar">A</view>
@@ -32,9 +32,8 @@
 					<text class="email">user@example.com</text>
 				</view>
 			</view>
-
+			<!-- <text class="card-title">常用操作</text> -->
 			<view class="card">
-				<text class="card-title">常用操作</text>
 				<view class="actions">
 					<view
 						v-for="action in actions"
@@ -47,9 +46,9 @@
 				</view>
 			</view>
 
-			<view class="notice">
+			<!-- <view class="notice">
 				<text>更多个人中心功能开发中，敬请期待。</text>
-			</view>
+			</view> -->
 		</view>
 		<customTabBar active="mine" />
 	</view>
