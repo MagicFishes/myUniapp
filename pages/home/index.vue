@@ -32,7 +32,7 @@
 						<personCounter></personCounter>
 						</view>
 					</view>
-					<view class="content-search-hotel">
+					<view class="content-search-hotel" @click="goToHotelBrand">
 						<view class="content-search-hotel-text">
 							关键词/品牌/酒店名
 						</view>
@@ -74,7 +74,11 @@ import { useHotelSearchStore } from '@/store/useHotelSearchStore';
 import Home from '@/api/home';
 import personCounter from '@/components/person-counter/index.vue';
 const hotelSearchStore = useHotelSearchStore();
-
+const goToHotelBrand = () => {
+	uni.navigateTo({
+		url: '/subpackages/search/pages/hotelBrand'
+	})
+}
 // 日历弹窗显示状态（响应式）
 const calendarShow = computed({
 	get: () => hotelSearchStore.calendarShow,
