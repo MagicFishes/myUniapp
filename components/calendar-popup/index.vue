@@ -14,12 +14,6 @@ const emit = defineEmits<{
 	'update:show': [value: boolean];
 }>();
 
-// 内部显示状态
-const internalShow = computed({
-	get: () => props.show,
-	set: (val) => emit('update:show', val)
-});
-
 // 日历默认选中的日期范围
 const defaultDate = computed(() => {
 	const checkInDate = hotelSearchStore.getCheckInDate;
@@ -59,25 +53,28 @@ const handleConfirm = (dates: string[]) => {
 		}
 	}
 	
-	// 关闭日历
-	internalShow.value = false;
+	// 关闭日历（同步到父组件）
+	emit('update:show', false);
 };
 
 // 日历关闭回调
 const handleClose = () => {
-	internalShow.value = false;
+	emit('update:show', false);
 };
+
 </script>
 
 <template>
 	<!-- 日历弹窗组件 -->
 	<up-calendar 
-		v-model:show="internalShow"
+		:show="props.show"
 		mode="range"
 		:defaultDate="defaultDate"
 		:closeOnClickOverlay="true"
+		@update:show="(val: boolean) => emit('update:show', val)"
 		@confirm="handleConfirm"
 		@close="handleClose"
+		@cancel="handleClose"
 	></up-calendar>
 </template>
 

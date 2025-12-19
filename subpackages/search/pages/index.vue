@@ -8,25 +8,25 @@
 				<view class="search-input-wrapper">
 					<uni-icons type="search" size="20" color="#999"></uni-icons>
 					<input class="search-input" v-model="searchKeyword" placeholder="关键词/品牌/酒店名"
-						@confirm="handleSearch" />
+						@input="handleInput" @confirm="handleSearch" />
 					<!-- <view class="search-button" @click="handleSearch">搜索</view> -->
 				</view>
 				<!-- 亚洲等区域 -->
-				<view v-if="!searchKeyword" class="region-list">
+				<!-- <view v-if="!searchKeyword" class="region-list">
 					<view class="region-item" v-for="item in regionList" :key="item.id"
 						:class="{ active: selectedRegionId === item.id }" @click="handleRegionClick(item.id)">
 						<text class="region-item-text">{{ item.name }}</text>
 						<view v-if="selectedRegionId === item.id" class="region-indicator"></view>
 					</view>
-				</view>
+				</view> -->
 
 			</view>
 			<template v-if="!searchKeyword">
 				<!-- 当前城市 -->
-				<view class="current-city-card">
+				<!-- <view class="current-city-card">
 					<view class="city-icon"></view>
 					<text class="city-text">当前城市: {{ currentCity }}</text>
-				</view>
+				</view> -->
 				<!-- 历史记录 -->
 				<view class="history-record-card" v-if="searchHistory.length > 0">
 					<view class="history-header">
@@ -45,18 +45,33 @@
 						</view>
 					</view>
 				</view>
-				<!-- 热门城市 -->
+				<!-- 国内热门城市 -->
 				<view class="hot-city-card">
 					<view class="hot-city-header">
 						<view class="hot-city-title-wrapper">
 							<text class="hot-city-icon">🔥</text>
-							<text class="hot-city-title">热门城市</text>
+							<text class="hot-city-title">国内热门城市</text>
 						</view>
 					</view>
 					<view class="hot-city-tags">
-						<view class="hot-city-tag" v-for="(city, index) in hotCities" :key="index"
+						<view class="hot-city-tag" v-for="(city, index) in defaultHotCities" :key="index"
 							@click="handleCityClick(city)">
-							<text class="hot-city-tag-text">{{ city }}</text>
+							<text class="hot-city-tag-text">{{ city.name }}</text>
+						</view>
+					</view>
+				</view>
+				<!-- 国外热门城市 -->
+				<view class="hot-city-card">
+					<view class="hot-city-header">
+						<view class="hot-city-title-wrapper">
+							<text class="hot-city-icon">🔥</text>
+							<text class="hot-city-title">国外热门城市</text>
+						</view>
+					</view>
+					<view class="hot-city-tags">
+						<view class="hot-city-tag" v-for="(city, index) in defaultHotForeignCities" :key="index"
+							@click="handleCityClick(city)">
+							<text class="hot-city-tag-text">{{ city.name }}</text>
 						</view>
 					</view>
 				</view>
@@ -65,7 +80,7 @@
 				<!-- 搜索结果 -->
 				<view class="search-results" v-if="hasSearched">
 					<view class="result-header">
-						<text class="result-count">找到 {{ hotelList.length }} 家酒店</text>
+						<text class="result-count">找到 {{ searchResults.length }} 个结果</text>
 					</view>
 					<!-- 加载状态 -->
 					<view class="loading-wrapper" v-if="isLoading">
@@ -73,12 +88,30 @@
 					</view>
 					<!-- 搜索结果列表 -->
 					<view class="hotel-list" v-else>
-						<view v-for="(item, index) in hotelList" :key="item.id || index" class="hotel-item-wrapper"
-							@click="handleSelectHotel(item)">
-							<HotelItem :item="item" />
+						<!-- 城市列表 -->
+						<view v-if="cityList.length > 0" class="result-section">
+							<view class="result-section-title">城市</view>
+							<view v-for="(item, index) in cityList" :key="`city-${item.id || index}`" 
+								class="search-result-item city-item" @click="handleSelectCity(item)">
+								<view class="result-item-left">
+									<text class="result-item-name">{{ item.name }}</text>
+								</view>
+								<view class="result-item-right">
+									<text class="result-item-count" v-if="item.hotelCount">{{ item.hotelCount }}家酒店</text>
+									<uni-icons type="right" size="16" color="#999"></uni-icons>
+								</view>
+							</view>
+						</view>
+						<!-- 酒店列表 -->
+						<view v-if="hotelList.length > 0" class="result-section">
+							<view class="result-section-title">酒店</view>
+							<view v-for="(item, index) in hotelList" :key="`hotel-${item.id || index}`" 
+								class="hotel-item-wrapper" @click="handleSelectHotel(item)">
+								<HotelItem :item="item" />
+							</view>
 						</view>
 						<!-- 空状态 -->
-						<view class="empty-state" v-if="hotelList.length === 0">
+						<view class="empty-state" v-if="searchResults.length === 0">
 							<text class="empty-text">暂无搜索结果</text>
 						</view>
 					</view>
@@ -96,6 +129,7 @@ import { useHotelSearchStore } from '@/store/useHotelSearchStore';
 import HotelItem from '@/components/hotel-item/index.vue';
 import customNavBar from '@/components/custom-nav-bar/index.vue';
 import utils from '@/utils/utils';
+import Home from '@/api/home';
 
 const regionList = ref<any[]>([
 	{
@@ -121,6 +155,8 @@ const hotelSearchStore = useHotelSearchStore();
 const searchKeyword = ref('');
 const hasSearched = ref(false);
 const hotelList = ref<any[]>([]);
+const cityList = ref<any[]>([]);
+const searchResults = ref<any[]>([]); // 合并的搜索结果列表（包含城市和酒店）
 const isLoading = ref(false);
 const searchHistory = ref<string[]>(['xi', '香港', '酒店', '丽晶酒店', '丽晶']);
 const hotCities = ref<string[]>([
@@ -131,9 +167,80 @@ const hotCities = ref<string[]>([
 	'天津', '汕头', '哈尔滨', '长沙',
 	'大连', '青岛', '金华', '淄博'
 ]);
+// 默认的热门城市列表
+const defaultHotCities=[
+  { code: '', name: '北京', type: 'city' },
+  { code: '', name: '上海', type: 'city' },
+  { code: '', name: '天津', type: 'city' },
+  { code: '', name: '重庆', type: 'city' },
+  { code: '', name: '大连', type: 'city' },
+  { code: '', name: '青岛', type: 'city' },
+  { code: '', name: '西安', type: 'city' },
+  { code: '', name: '南京', type: 'city' },
+  { code: '', name: '苏州', type: 'city' },
+  { code: '', name: '杭州', type: 'city' },
+  { code: '', name: '厦门', type: 'city' },
+  { code: '', name: '成都', type: 'city' },
+  { code: '', name: '深圳', type: 'city' },
+  { code: '', name: '广州', type: 'city' },
+  { code: '', name: '三亚', type: 'city' },
+  { code: '', name: '台北', type: 'city' },
+  { code: '', name: '香港', type: 'city' },
+  { code: '', name: '济南', type: 'city' },
+  { code: '', name: '沈阳', type: 'city' }
+]
+// 默认的外国热门城市列表
+const defaultHotForeignCities=[
+  { code: '', name: '首尔', type: 'city' },
+  { code: '', name: '曼谷', type: 'city' },
+  { code: '', name: '普吉岛', type: 'city' },
+  { code: '', name: '东京', type: 'city' },
+  { code: '', name: '新加坡', type: 'city' },
+  { code: '', name: '大阪', type: 'city' },
+  { code: '', name: '济州市', type: 'city' },
+  { code: '', name: '巴厘岛', type: 'city' },
+  { code: '', name: '清迈', type: 'city' },
+  { code: '', name: '京都', type: 'city' },
+  { code: '', name: '吉隆坡', type: 'city' },
+  { code: '', name: '芭提雅', type: 'city' },
+  { code: '', name: '那霸', type: 'city' },
+  { code: '', name: '洛杉矶', type: 'city' },
+  { code: '', name: '哥大京那巴鲁', type: 'city' }, 
 
+]
 // 获取搜索信息
 const searchInfo = computed(() => hotelSearchStore.getSearchInfo);
+
+// 防抖定时器
+let debounceTimer: any = null;
+
+// 防抖函数
+const debounce = (fn: Function, delay: number = 300) => {
+	return (...args: any[]) => {
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+		debounceTimer = setTimeout(() => {
+			fn.apply(null, args);
+		}, delay);
+	};
+};
+
+// 处理 input 事件（带防抖）
+const handleInput = debounce((e: any) => {
+	// input 事件触发时，searchKeyword 已经通过 v-model 自动更新
+	const keyword = e.detail?.value || searchKeyword.value;
+	if (keyword && keyword.trim()) {
+		// 自动执行搜索（不添加历史记录，只在确认时添加）
+		performSearch();
+	} else {
+		// 如果输入为空，清空搜索结果
+		hasSearched.value = false;
+		searchResults.value = [];
+		hotelList.value = [];
+		cityList.value = [];
+	}
+}, 300);
 
 // 处理搜索
 const handleSearch = () => {
@@ -206,70 +313,56 @@ const handleClearHistory = () => {
 	});
 };
 
-// 执行搜索（模拟搜索接口）
+// 执行搜索（调用搜索接口）
 const performSearch = async () => {
+	if (!searchKeyword.value.trim()) {
+		return;
+	}
+
 	isLoading.value = true;
 	hasSearched.value = true;
 
 	try {
-		// 模拟 API 请求延迟
-		await new Promise(resolve => setTimeout(resolve, 500));
-
-		// TODO: 调用实际的搜索 API
-		// const response = await searchHotelAPI({
-		//   keyword: searchKeyword.value,
-		//   destination: searchInfo.value.destination,
-		//   checkInDate: searchInfo.value.checkInDate,
-		//   checkOutDate: searchInfo.value.checkOutDate
-		// });
-		// hotelList.value = response.data;
-
-		// 模拟数据：根据关键词返回不同的结果
-		const mockData = [
-			{
-				id: 1,
-				image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-				name: `${searchKeyword.value || '酒店'}名称1`,
-				price: '100',
-				label: ['住3付2', '享奢旅积分'],
-			},
-			{
-				id: 2,
-				image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-				name: `${searchKeyword.value || '酒店'}名称2`,
-				price: '200',
-				label: ['住3付2', '享奢旅积分'],
-			},
-			{
-				id: 3,
-				image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-				name: `${searchKeyword.value || '酒店'}名称3`,
-				price: '300',
-				label: ['住3付2', '享奢旅积分', '免费取消'],
-			},
-			{
-				id: 4,
-				image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-				name: `${searchKeyword.value || '酒店'}名称4`,
-				price: '400',
-				label: ['住3付2'],
-			},
-			{
-				id: 5,
-				image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-				name: `${searchKeyword.value || '酒店'}名称5`,
-				price: '500',
-				label: ['享奢旅积分', '免费WiFi'],
-			}
-		];
-
-		hotelList.value = mockData;
-	} catch (error) {
+		const response = await Home.searchHotels(searchKeyword.value);
+		const { data } = response;
+		
+		if (data.success) {
+			const resultData = data.data || {};
+			
+			// 处理城市列表
+			const cities = (resultData.cityList || []).map((city: any) => ({
+				...city,
+				type: 'city' // 标记为城市类型
+			}));
+			cityList.value = cities;
+			
+			// 处理酒店列表
+			const hotels = (resultData.hotelList || []).map((hotel: any) => ({
+				...hotel,
+				type: 'hotel' // 标记为酒店类型
+			}));
+			hotelList.value = hotels;
+			
+			// 合并搜索结果（先显示城市，再显示酒店）
+			searchResults.value = [...cities, ...hotels];
+		} else {
+			uni.showToast({
+				title: data.message || '搜索失败',
+				icon: 'none'
+			});
+			searchResults.value = [];
+			hotelList.value = [];
+			cityList.value = [];
+		}
+	} catch (error: any) {
 		console.error('搜索失败:', error);
 		uni.showToast({
-			title: '搜索失败，请重试',
+			title: error.message || '搜索失败，请重试',
 			icon: 'none'
 		});
+		searchResults.value = [];
+		hotelList.value = [];
+		cityList.value = [];
 	} finally {
 		isLoading.value = false;
 	}
@@ -282,9 +375,43 @@ const handleRegionClick = (regionId: number) => {
 };
 
 // 点击热门城市
-const handleCityClick = (city: string) => {
-	searchKeyword.value = city;
+const handleCityClick = (city: any) => {
+	// city 可能是字符串或对象
+	const cityName = typeof city === 'string' ? city : city.name;
+	
+	// 将城市名称赋值到输入栏
+	searchKeyword.value = cityName;
+	
+	// 创建城市对象（热门城市可能只有 name，创建一个包含 name 的对象）
+	const cityObj = typeof city === 'string' ? { name: city } : city;
+	
+	// 更新 store 中的选中目的地（传入完整的城市对象）
+	hotelSearchStore.setSelectedDestination(cityObj);
+	hotelSearchStore.setDestination(cityName);
+	
+	// 直接触发搜索（点击城市时不需要防抖，立即搜索）
 	handleSearch();
+};
+
+// 选中城市
+const handleSelectCity = (city: any) => {
+	// 存储完整的城市对象到 store（包含 id、name、code 等所有信息）
+	if (city && city.name) {
+		hotelSearchStore.setSelectedDestination(city); // 传入完整的城市对象
+		hotelSearchStore.setDestination(city.name); // destination 字段保持为字符串名称
+	}
+	
+	// 返回上一页
+	const pages = getCurrentPages();
+	if (pages.length > 1) {
+		uni.navigateBack({
+			delta: 1
+		});
+	} else {
+		uni.redirectTo({
+			url: '/pages/home/index'
+		});
+	}
 };
 
 // 选中酒店
@@ -297,18 +424,15 @@ const handleSelectHotel = (hotel: any) => {
 		hotelSearchStore.setHotelName(hotel.name);
 	}
 
-	// 使用 redirectTo 返回上一页，确保当前页面被销毁
-	// 获取页面栈
-	const pages = getCurrentPages();
-	if (pages.length > 1) {
-		// 如果页面栈中有上一页，使用 navigateBack 并指定 delta
-		uni.navigateBack({
-			delta: 1
+	// 跳转到酒店详情页面
+	if (hotel.id) {
+		uni.navigateTo({
+			url: `/subpackages/search/pages/detail?id=${hotel.id}`
 		});
 	} else {
-		// 如果没有上一页，跳转到首页
-		uni.redirectTo({
-			url: '/pages/home/index'
+		uni.showToast({
+			title: '酒店信息不完整',
+			icon: 'none'
 		});
 	}
 };
@@ -319,9 +443,9 @@ const handleSelectHotel = (hotel: any) => {
 
 onMounted(() => {
 	// 如果 store 中有酒店名称，自动填充
-	if (searchInfo.value.hotelName) {
-		searchKeyword.value = searchInfo.value.hotelName;
-	}
+	// if (searchInfo.value.hotelName) {
+	// 	searchKeyword.value = searchInfo.value.hotelName;
+	// }
 
 	// 从本地存储加载历史记录
 	try {
@@ -333,6 +457,7 @@ onMounted(() => {
 		console.error('加载历史记录失败:', e);
 	}
 });
+
 </script>
 
 <style scoped lang="scss">
@@ -349,7 +474,8 @@ onMounted(() => {
 	background-color: #ffffff;
 	border-radius: 20rpx;
 	margin-bottom: 20rpx;
-	padding: 20rpx 30rpx;
+	padding: 20rpx 20rpx;
+	margin-top: 20rpx;
 }
 
 .region-list {
@@ -555,7 +681,7 @@ onMounted(() => {
 	gap: 20rpx;
 	padding: 20rpx;
 	border-radius: 20rpx;
-	margin-bottom: 20rpx;
+	// margin-bottom: 20rpx;
 }
 
 .search-input {
@@ -588,7 +714,66 @@ onMounted(() => {
 	.hotel-list {
 		display: flex;
 		flex-direction: column;
+		gap: 30rpx;
+	}
+
+	.result-section {
+		display: flex;
+		flex-direction: column;
 		gap: 20rpx;
+	}
+
+	.result-section-title {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #333;
+		padding: 0 10rpx;
+		margin-bottom: 10rpx;
+	}
+
+	.search-result-item {
+		background-color: #fff;
+		border-radius: 20rpx;
+		padding: 30rpx;
+		cursor: pointer;
+		transition: all 0.2s;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+
+		&:active {
+			opacity: 0.8;
+			transform: scale(0.98);
+		}
+
+		.result-item-left {
+			display: flex;
+			align-items: center;
+			flex: 1;
+		}
+
+		.result-item-name {
+			font-size: 32rpx;
+			color: #333;
+			font-weight: 500;
+		}
+
+		.result-item-right {
+			display: flex;
+			align-items: center;
+			gap: 16rpx;
+			flex-shrink: 0;
+		}
+
+		.result-item-count {
+			font-size: 26rpx;
+			color: #999;
+		}
+	}
+
+	.city-item {
+		margin-bottom: 0;
 	}
 
 	.hotel-item-wrapper {

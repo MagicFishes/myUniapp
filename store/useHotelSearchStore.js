@@ -11,19 +11,73 @@ const getTomorrow = () => {
 	return dayjs().add(1, 'day').format('YYYY-MM-DD')
 }
 
-export const useHotelSearchStore = defineStore('hotelSearch', {
-	state: () => ({
+// 从本地存储加载数据
+const loadFromStorage = () => {
+	try {
+		const stored = uni.getStorageSync('hotelSearchStore')
+		if (stored) {
+			const parsed = JSON.parse(stored)
+			return {
+				searchInfo: {
+					destination: parsed.searchInfo?.destination || '',
+					checkInDate: parsed.searchInfo?.checkInDate || getToday(),
+					checkOutDate: parsed.searchInfo?.checkOutDate || getTomorrow(),
+					hotelName: parsed.searchInfo?.hotelName || '',
+				},
+				selectedDestination: parsed.selectedDestination || null,
+				cityName: parsed.cityName || '',
+				selectedHotel: parsed.selectedHotel || null,
+				calendarShow: false, // UI 状态不需要持久化
+				calendarMode: parsed.calendarMode || 'range',
+				personCount: parsed.personCount || 1
+			}
+		}
+	} catch (e) {
+		console.error('加载 store 数据失败:', e)
+	}
+	return null
+}
+
+// 需要持久化的字段列表
+const persistFields = ['searchInfo', 'selectedDestination', 'cityName', 'selectedHotel', 'calendarMode', 'personCount']
+
+// 保存到本地存储
+const saveToStorage = (state) => {
+	try {
+		const dataToSave = {}
+		persistFields.forEach(key => {
+			dataToSave[key] = state[key]
+		})
+		uni.setStorageSync('hotelSearchStore', JSON.stringify(dataToSave))
+	} catch (e) {
+		console.error('保存 store 数据失败:', e)
+	}
+}
+
+// 获取初始状态
+const getInitialState = () => {
+	const loaded = loadFromStorage()
+	if (loaded) {
+		return loaded
+	}
+	return {
 		searchInfo: {
-			destination: '', // 目的地
-			checkInDate: getToday(), // 入住时间（默认今天）
-			checkOutDate: getTomorrow(), // 离店时间（默认明天）
-			hotelName: '', // 酒店名称
+			destination: '',
+			checkInDate: getToday(),
+			checkOutDate: getTomorrow(),
+			hotelName: '',
 		},
-		selectedHotel: null, // 选中的酒店对象
-		calendarShow: false, // 日历弹窗显示状态
-		calendarMode: 'range', // 日历模式：range-日期范围选择
-		personCount: 1 // 人数（默认1人）
-	}),
+		selectedDestination: null,
+		cityName: '',
+		selectedHotel: null,
+		calendarShow: false,
+		calendarMode: 'range',
+		personCount: 1
+	}
+}
+
+export const useHotelSearchStore = defineStore('hotelSearch', {
+	state: () => getInitialState(),
 	getters: {
 		// 获取完整的搜索信息对象
 		getSearchInfo: (state) => state.searchInfo,
@@ -42,7 +96,11 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 获取日历模式
 		getCalendarMode: (state) => state.calendarMode,
 		// 获取人数
-		getPersonCount: (state) => state.personCount
+		getPersonCount: (state) => state.personCount,
+		// 获取选中的目的地
+		getSelectedDestination: (state) => state.selectedDestination,
+		// 获取城市名称
+		getCityName: (state) => state.cityName
 	},
 	actions: {
 		// 设置完整的搜索信息对象
@@ -85,7 +143,7 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		resetSelectedHotel() {
 			this.selectedHotel = null
 		},
-		// 设置日历弹窗显示状态
+		// 设置日历弹窗显示状态（不需要持久化）
 		setCalendarShow(show) {
 			this.calendarShow = show
 		},
@@ -104,7 +162,20 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 减少人数（不限制最小值，由组件控制）
 		decreasePersonCount() {
 			this.personCount--
+		},
+		// 设置选中的目的地（城市对象）
+		setSelectedDestination(destination) {
+			this.selectedDestination = destination
+			// 同时更新城市名称
+			if (destination && destination.name) {
+				this.cityName = destination.name
+			} else if (!destination) {
+				this.cityName = ''
+			}
+		},
+		// 设置城市名称
+		setCityName(cityName) {
+			this.cityName = cityName
 		}
 	}
 })
-

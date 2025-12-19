@@ -1,37 +1,45 @@
 <script setup lang="ts">
-// 定义酒店项的类型
+// 定义酒店项的类型（根据实际接口返回的数据结构）
 type HotelItemType = {
-  id?: number; // id 是可选的
-  image: string;
+  id?: string | number;
   name: string;
-  price: string;
-  label: string[];
+  nameEn?: string;
+  code?: string;
+  globalHotelCode?: string;
+  image?: string; // 图片可选
+  price?: string; // 价格可选
+  label?: string[]; // 标签可选
+  [key: string]: any; // 允许其他字段
 }
 
 const props = defineProps<{
   item: HotelItemType
 }>();
 
-// 调试：打印接收到的数据
+// 默认图片
+const defaultImage = 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg'
 </script>
 <template>
   <!-- 上下结构布局  上图片,下  酒店名称 文字 标签-->
   <view class="hotel-item">
     <view class="hotel-item-top">
       <image
-        :src="props.item?.image || 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg'"
+        :src="props.item?.image || defaultImage"
         mode="aspectFill"></image>
     </view>
     <view class="hotel-item-bottom">
-      <view class="hotel-item-bottom-text">
+      <view class="hotel-item-bottom-text hotel-item-name">
         <text>{{ props.item?.name || '未命名' }}</text>
       </view>
-      <view class="hotel-item-bottom-text">
-        <text>¥{{ props.item?.price || '0' }}</text>
+      <view class="hotel-item-bottom-text hotel-item-name-en" v-if="props.item?.nameEn">
+        <text>{{ props.item.nameEn }}</text>
+      </view>
+      <view class="hotel-item-bottom-text hotel-item-price" v-if="props.item?.price">
+        <text>¥{{ props.item.price }}</text>
       </view>
       <!-- 标签 -->
-      <view class="hotel-item-bottom-text hotel-item-bottom-labels">
-        <view v-for="(label, index) in props.item?.label || []" :key="index" class="hotel-item-bottom-text-label">
+      <view class="hotel-item-bottom-text hotel-item-bottom-labels" v-if="props.item?.label && props.item.label.length > 0">
+        <view v-for="(label, index) in props.item.label" :key="index" class="hotel-item-bottom-text-label">
           <text>{{ label }}</text>
         </view>
       </view>
@@ -77,24 +85,45 @@ const props = defineProps<{
     .hotel-item-bottom-text {
       width: 100%;
       font-size: 22rpx;
-      color: #333; // 改为更深的颜色，确保可见
+      color: #333;
       letter-spacing: 2rpx;
-      padding: 8rpx 0; // 添加内边距
+      padding: 6rpx 0;
+
+      &.hotel-item-name {
+        font-size: 28rpx;
+        font-weight: 600;
+        color: #333;
+        padding-bottom: 8rpx;
+      }
+
+      &.hotel-item-name-en {
+        font-size: 22rpx;
+        color: #999;
+        padding-bottom: 8rpx;
+      }
+
+      &.hotel-item-price {
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #ff6b6b;
+        padding: 8rpx 0;
+      }
 
       &.hotel-item-bottom-labels {
         display: flex;
         flex-wrap: wrap;
-        gap: 10rpx; // 使用 gap 替代 margin-right
+        gap: 10rpx;
+        padding-top: 8rpx;
       }
 
       .hotel-item-bottom-text-label {
-        display: inline-block; // 改为 inline-block
+        display: inline-block;
         border: 1rpx solid #999;
         border-radius: 10rpx;
         padding: 6rpx 12rpx;
-        font-size: 22rpx;
+        font-size: 20rpx;
         color: #999;
-        letter-spacing: 2rpx;
+        letter-spacing: 1rpx;
       }
     }
   }

@@ -6,7 +6,7 @@
 			<!-- 搜索栏 -->
 			<view class="search-bar">
 				<view class="search-bar-left">
-					<view class="search-bar-left-text">香港</view>
+					<view class="search-bar-left-text">{{ cityName || '选择城市' }}</view>
 					<view class="search-bar-left-item-container" @click="handleOpenCalendar">
 						<view class="search-bar-left-item">
 						<text style="color: #c0c3cc;">住</text>
@@ -24,9 +24,9 @@
 				</view>
 				<view class="search-bar-right">
 					<!-- 搜索 -->
-					<view class="search-bar-right-item">
+					<view class="search-bar-right-item" @click="handleSearchClick">
 						<uni-icons type="search" size="14" color="#666"></uni-icons>
-						<input disabled type="text" placeholder="关键词/品牌/酒店名">
+						<input disabled type="text" placeholder="城市/酒店">
 					</view>
 
 				</view>
@@ -142,7 +142,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { useHotelSearchStore } from '@/store/useHotelSearchStore';
 import searchHotelItem from '@/components/search-hotel-item/index.vue';
 import customNavBar from '@/components/custom-nav-bar/index.vue';
@@ -163,6 +163,13 @@ const calendarShow = computed({
 const checkInDate = computed(() => hotelSearchStore.getCheckInDate);
 const checkOutDate = computed(() => hotelSearchStore.getCheckOutDate);
 
+// 获取城市名称
+const cityName = computed(() => {
+	const destination = hotelSearchStore.getDestination;
+	const cityNameFromStore = hotelSearchStore.getCityName;
+	return cityNameFromStore || destination || '';
+});
+
 // 格式化日期显示（MM/DD格式）
 const formatDateDisplay = (dateStr: string) => {
 	if (!dateStr) return '';
@@ -176,6 +183,13 @@ const formatDateDisplay = (dateStr: string) => {
 // 打开日历弹窗
 const handleOpenCalendar = () => {
 	hotelSearchStore.setCalendarShow(true);
+};
+
+// 点击搜索框跳转到搜索页面
+const handleSearchClick = () => {
+	uni.navigateTo({
+		url: '/subpackages/search/pages/index'
+	});
 };
 
 // 酒店列表数据
@@ -216,260 +230,113 @@ const searchInfo = computed(() => hotelSearchStore.getSearchInfo);
 // 城市ID（可以从路由参数或store获取）
 const cityId = ref<string | number>('');
 
-// 生成假数据
-const generateMockHotelData = (page: number) => {
-	const baseId = (page - 1) * pageSize.value;
-	const mockHotels = [
-		{
-			id: '4802',
-			name: '巴黎丽兹酒店',
-			nameEn: 'Ritz Paris',
-			image: 'https://cdn.youxiatrip.com/hotel/040ff6fe-b03a-42cb-8385-d548470d387b.jpg',
-			telephone: '33-1-43163030',
-			address: '',
-			addressEn: '15 Place Vendome Paris France 75001',
-			brandName: '立鼎世',
-			tagName: []
-		},
-		{
-			id: '4809',
-			name: '莱佛士皇家巴黎梦索酒店',
-			nameEn: 'Le Royal Monceau Raffles',
-			image: 'https://cdn.youxiatrip.com/upload/image/uals0f3zggeqk9uyjxow.jpg',
-			telephone: '33-1-42998800',
-			address: '',
-			addressEn: '37 Avenue Hoche Paris France 75008',
-			brandName: '莱佛士',
-			tagName: ['住几付几', '其他', '保证升级']
-		},
-		{
-			id: '4816',
-			name: '巴黎瑞瑟夫酒店',
-			nameEn: 'LA RESERVE PARIS HOTEL AND SPA',
-			image: 'https://cdn.youxiatrip.com/upload/image/dlng3ljtzharcn2ajpia.jpg',
-			telephone: '33-1-58366060',
-			address: '',
-			addressEn: '42 AVENUE GABRIEL   PARIS FR 75008',
-			brandName: '立鼎世',
-			tagName: []
-		},
-		{
-			id: '4823',
-			name: '巴黎香格里拉酒店',
-			nameEn: 'SHANGRI LA PARIS',
-			image: 'https://cdn.youxiatrip.com/file/1648116487594.jpg',
-			telephone: '(33) 1 53 67 19 64',
-			address: '',
-			addressEn: '10 AVENUE D IENA   PARIS FR 75116',
-			brandName: '香格里拉',
-			tagName: ['保证升级', '其他', '住几付几']
-		},
-		{
-			id: '4830',
-			name: '巴黎文华东方酒店',
-			nameEn: 'Mandarin Oriental Paris',
-			image: 'https://cdn.youxiatrip.com/upload/image/zpagc4ik6pk4zxjc6kxq.jpg',
-			telephone: '33-1-70987888',
-			address: '',
-			addressEn: '251 Rue Saint Honore Paris France 75001',
-			brandName: '文华东方',
-			tagName: ['住几付几', '其他', '额外礼遇']
-		},
-		{
-			id: '4837',
-			name: '巴黎半岛酒店',
-			nameEn: 'The Peninsula Paris',
-			image: 'https://cdn.youxiatrip.com/upload/image/hxzmkznspbc1ryxhuvwv.jpg',
-			telephone: '33 1 58 12 28 88',
-			address: '巴黎市中心克勒贝尔大街19号 (Avenue Kléber)',
-			addressEn: '19 Avenue Kleber. Paris France 75116',
-			brandName: '半岛',
-			tagName: ['其他', '住几付几']
-		},
-		{
-			id: '4844',
-			name: '巴黎德加勒王子豪华精选酒店',
-			nameEn: 'Prince de Galles, a Luxury Collection Hotel, Paris',
-			image: 'https://cdn.youxiatrip.com/upload/image/k2lvm5gkp9n9rmztuhlo.jpg',
-			telephone: '33-1-53237777',
-			address: '',
-			addressEn: '33 Avenue George V Paris France 75008',
-			brandName: '豪华精选',
-			tagName: []
-		},
-		{
-			id: '4858',
-			name: '巴黎洲际大酒店',
-			nameEn: 'InterContinental Paris Le Grand Hotel',
-			image: 'https://cdn.youxiatrip.com/upload/image/e71vn10c0xo6woclhca2.jpg',
-			telephone: '33-1-40073232',
-			address: '',
-			addressEn: '2 Rue Scribe Paris France 75009',
-			brandName: '洲际',
-			tagName: ['住几付几']
-		},
-		{
-			id: '4865',
-			name: '巴里尔富凯巴黎酒店',
-			nameEn: 'Hotel Barriere Le Fouquet\'s',
-			image: 'https://cdn.youxiatrip.com/upload/image/bp8gurepgcp8waipghcp.jpg',
-			telephone: '33 970 809 111',
-			address: '',
-			addressEn: '46 Avenue George V Paris France 75008',
-			brandName: '立鼎世',
-			tagName: ['保证升级', '住几付几']
-		},
-		{
-			id: '4872',
-			name: '巴黎欧特家布里斯托尔酒店',
-			nameEn: 'Le Bristol Paris',
-			image: 'https://cdn.youxiatrip.com/upload/image/yaf5t5okzemxnlc813pg.jpg',
-			telephone: '33-1-53434300',
-			address: '',
-			addressEn: '112 Rue Du Faubourg St Honore Paris France 75008',
-			brandName: '欧特家',
-			tagName: []
-		},
-		{
-			id: '4879',
-			name: '巴黎柏悦酒店',
-			nameEn: 'Park Hyatt Paris-Vendome',
-			image: 'https://cdn.youxiatrip.com/upload/image/nybusjqlof23fghvxitz.jpg',
-			telephone: '33-1-58711234',
-			address: '',
-			addressEn: '5 Rue De La Paix Paris France 75002',
-			brandName: '柏悦',
-			tagName: []
-		}
-	];
-	
-	// 根据页码返回对应的数据
-	const startIndex = (page - 1) * pageSize.value;
-	const endIndex = startIndex + pageSize.value;
-	const pageData = mockHotels.slice(startIndex, endIndex);
-	
-	// 处理图片（取第一张）
-	pageData.forEach((item: any) => {
-		item.lowestPrice = null; // 初始化为null，显示加载状态
-		if (item.image && item.image.includes(',')) {
-			item.image = item.image.split(',')[0];
-		}
-	});
-	
-	return pageData;
+// 尝试从 store 初始化 cityId（例如从搜索页返回时）
+const initCityIdFromStore = () => {
+	if (cityId.value) return;
+	const selectedDestination: any = (hotelSearchStore as any).getSelectedDestination || (hotelSearchStore as any).selectedDestination;
+	if (selectedDestination && (selectedDestination.id || selectedDestination.cityId)) {
+		cityId.value = selectedDestination.id || selectedDestination.cityId;
+	}
 };
 
-// 生成假价格数据（符合真实接口格式）
-const generateMockPriceData = (hotelIds: (string | number)[]) => {
-	// 模拟价格接口返回的数据
-	return hotelIds.map((id, index) => {
-		// 模拟部分酒店有价格，部分没有价格
-		if (index % 5 === 0) {
-			// 每5个酒店中有一个满房（没有价格）
-			return {
-				id: String(id),
-				initMinPrice: null,
-				initPriceUnit: '',
-				minPrice: null
-			};
-		} else {
-			// 随机生成价格单位（CNY或EUR）
-			const priceUnit = Math.random() > 0.8 ? 'EUR' : 'CNY';
-			
-			if (priceUnit === 'EUR') {
-				// EUR价格在300-2500之间
-				const eurPrice = Math.random() * 2200 + 300;
-				const cnyPrice = Math.floor(eurPrice * 8.23); // 汇率约8.23
-				return {
-					id: String(id),
-					initMinPrice: Math.round(eurPrice * 100) / 100,
-					initPriceUnit: 'EUR',
-					minPrice: cnyPrice
-				};
-			} else {
-				// CNY价格在2000-30000之间
-				const cnyPrice = Math.random() * 28000 + 2000;
-				return {
-					id: String(id),
-					initMinPrice: Math.round(cnyPrice * 100) / 100,
-					initPriceUnit: 'CNY',
-					minPrice: Math.floor(cnyPrice)
-				};
-			}
-		}
-	});
-};
-
-// 加载酒店列表
+// 加载酒店列表（真实接口，一次性获取）
 const loadHotelList = async (page: number = 1, reset: boolean = false) => {
 	if (isLoading.value) return;
-	
-	isLoading.value = true;
-	
-	try {
-		// 模拟接口延迟
-		await new Promise(resolve => setTimeout(resolve, 500));
-		
-		// 使用假数据
-		const mockData = generateMockHotelData(page);
-		
-		if (reset) {
-			hotelList.value = mockData;
-		} else {
-			hotelList.value = [...hotelList.value, ...mockData];
+
+	// 优先从路由参数取，其次从 store 取
+	if (!cityId.value) {
+		initCityIdFromStore();
+		if (!cityId.value) {
+			console.warn('cityId 为空，无法加载酒店列表');
+			return;
 		}
-		
-		// 创建ID到索引的映射（同时支持字符串和数字类型的ID）
+	}
+
+	isLoading.value = true;
+
+	try {
+		// 1. 调用城市酒店列表接口
+		const { data } = await Hotel.getHotelsByCity({
+			cityId: cityId.value
+		} as any);
+
+		if (!data?.success) {
+			throw new Error(data?.message || '获取酒店列表失败');
+		}
+
+		// 后端一次性返回列表，这里不做前端分页
+		const pageData = Array.isArray(data.data) ? data.data : [];
+
+		// 初始化图片和最低价字段
+		pageData.forEach((item: any) => {
+			item.lowestPrice = null;
+			if (item.image && typeof item.image === 'string' && item.image.includes(',')) {
+				item.image = item.image.split(',')[0];
+			}
+		});
+
+		if (reset) {
+			hotelList.value = pageData;
+		} else {
+			hotelList.value = [...hotelList.value, ...pageData];
+		}
+
+		// 创建 id -> index 映射，方便回填价格
 		const hotelIndexMap = hotelList.value.reduce((acc: any, cur: any, index: number) => {
 			const idKey = String(cur.id);
 			acc[idKey] = index;
 			return acc;
 		}, {});
-		
-		// 模拟获取价格接口（延迟1.5秒，模拟加载状态）
-		// 注意：真实接口调用时会使用 store 中的 personCount 作为 adultNum 参数
-		// const checkInDate = hotelSearchStore.getCheckInDate;
-		// const checkOutDate = hotelSearchStore.getCheckOutDate;
-		// const personCount = hotelSearchStore.personCount; // 直接使用store中的人数
-		setTimeout(() => {
-			const hotelIds = hotelList.value.map((item: any) => item.id);
-			const mockPriceData = generateMockPriceData(hotelIds);
-			
-			// 匹配价格到对应的酒店
-			mockPriceData.forEach((priceItem: any) => {
-				const priceId = String(priceItem.id);
-				if (hotelIndexMap[priceId] !== undefined) {
+
+		// 2. 调用最低价接口
+		const hotelIds = hotelList.value.map((item: any) => item.id);
+		if (hotelIds.length > 0) {
+			const checkin = hotelSearchStore.getCheckInDate;
+			const checkout = hotelSearchStore.getCheckOutDate;
+			const adultNum = hotelSearchStore.getPersonCount;
+
+			const { data: priceRes } = await Hotel.getHotelLowestPrices({
+				ids: hotelIds,
+				checkin,
+				checkout,
+				adultNum
+			} as any);
+
+			if (priceRes?.success && Array.isArray(priceRes.data)) {
+				// 匹配最低价到对应酒店
+				priceRes.data.forEach((item: any) => {
+					const priceId = String(item.id);
 					const hotelIndex = hotelIndexMap[priceId];
-					if (priceItem.minPrice === null || priceItem.minPrice === undefined) {
-						// 没有价格（满房）
-						hotelList.value[hotelIndex].lowestPrice = {
+					if (hotelIndex !== undefined) {
+						if (item.minPrice === null || item.minPrice === undefined) {
+							hotelList.value[hotelIndex].lowestPrice = {
+								minPrice: null,
+								initPriceUnit: ''
+							};
+						} else {
+							hotelList.value[hotelIndex].lowestPrice = {
+								minPrice: item.minPrice,
+								initPriceUnit: item.initPriceUnit || 'CNY'
+							};
+						}
+					}
+				});
+
+				// 对于没有匹配到价格的酒店，设置默认“满房”状态
+				hotelList.value.forEach((item: any) => {
+					if (item.lowestPrice === null) {
+						item.lowestPrice = {
 							minPrice: null,
 							initPriceUnit: ''
 						};
-					} else {
-						// 有价格
-						hotelList.value[hotelIndex].lowestPrice = {
-							minPrice: priceItem.minPrice,
-							initPriceUnit: priceItem.initPriceUnit || 'CNY'
-						};
 					}
-				}
-			});
-			
-			// 对于没有匹配到价格的酒店，设置为默认值（满房）
-			hotelList.value.forEach((item: any) => {
-				if (item.lowestPrice === null) {
-					item.lowestPrice = {
-						minPrice: null,
-						initPriceUnit: ''
-					};
-				}
-			});
-		}, 1500);
-		
-		// 判断是否还有更多数据
-		hasMore.value = mockData.length === pageSize.value;
-		currentPage.value = page;
+				});
+			}
+		}
+
+		// 本页面不做分页，一次性加载完
+		hasMore.value = false;
+		currentPage.value = 1;
 	} catch (error: any) {
 		console.error('加载失败:', error);
 		uni.showToast({
@@ -544,14 +411,28 @@ const handleSelectHotel = (hotel: any) => {
 	});
 };
 
-// 页面加载
+// 页面加载（首次进入时调用）
 onLoad((options: any) => {
 	// 从路由参数获取cityId（如果有）
 	if (options?.cityId) {
 		cityId.value = options.cityId;
 	}
+
+	// 如果路由没有带 cityId，则尝试从 store 中取
+	if (!cityId.value) {
+		initCityIdFromStore();
+	}
+
 	// 初始加载数据
 	loadHotelList(1, true);
+});
+
+// 页面每次显示时（例如从搜索页返回）
+onShow(() => {
+	// 如果当前没有酒店数据且不在加载中，则尝试重新加载
+	if (!isLoading.value && hotelList.value.length === 0) {
+		loadHotelList(1, true);
+	}
 });
 </script>
 

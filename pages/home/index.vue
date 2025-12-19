@@ -14,32 +14,32 @@
 				<view class="content-search">
 					<view class="content-search-position" @click="goToSearchPage">
 						<view class="content-search-position-text">
-							目的地
+							{{ destinationText }}
 						</view>
-						<view class="content-search-position-icon">
+						<!-- <view class="content-search-position-icon">
 							<uni-icons type="location" size="20" color="#999"></uni-icons>
 							<view class="content-search-position-icon-text">
 								我的定位
 							</view>
-						</view>
+						</view> -->
 					</view>
 					<view class="content-search-date">
-						<view class="content-search-date-time">	
+						<view class="content-search-date-time">
 							<ChooseTimeData :height="100"></ChooseTimeData>
 						</view>
 						<view class="content-search-date-line"></view>
 						<view class="content-search-date-person">
-						<personCounter></personCounter>
+							<personCounter></personCounter>
 						</view>
 					</view>
-					<view class="content-search-hotel" @click="goToHotelBrand">
+					<!-- <view class="content-search-hotel" @click="goToHotelBrand">
 						<view class="content-search-hotel-text">
 							关键词/品牌/酒店名
 						</view>
 						<view class="content-search-hotel-icon">
 							<uni-icons type="search" size="20" color="#999"></uni-icons>
 						</view>
-					</view>
+					</view> -->
 					<view class="content-search-button" @click="goToHotelList">
 						酒店查询
 					</view>
@@ -53,10 +53,10 @@
 					</view>
 				</view>
 			</view>
-		
+
 		</view>
-			<!-- 底部导航栏 -->
-			<customTabBar />
+		<!-- 底部导航栏 -->
+		<customTabBar />
 		<!-- 日历弹窗 - 提升到页面级别，和底部导航栏同级 -->
 		<!-- 使用 v-if 条件渲染，只在需要时渲染，优化性能 -->
 		<CalendarPopup v-if="calendarShow" v-model:show="calendarShow" />
@@ -85,12 +85,18 @@ const calendarShow = computed({
 	set: (val) => hotelSearchStore.setCalendarShow(val)
 });
 
+// 目的地文本（响应式）- 从 store 中获取选中的目的地，如果为空则显示"请选择目的地"
+const destinationText = computed(() => {
+	const cityName = hotelSearchStore.getCityName;
+	return cityName || '请选择目的地';
+});
+
 // 页面显示时执行（每次显示都会执行）
 onShow(() => {
 	console.log('🟢 onShow 生命周期触发 - 首页显示')
 	console.log('📋 hasLoadedBanner:', hasLoadedBanner.value)
 	console.log('📋 list1 长度:', list1.length)
-	
+
 	// 如果是 tabBar 页面，首次加载时可能不会触发 onLoad，所以在这里也调用一次
 	// 使用标志位避免重复调用
 	if (!hasLoadedBanner.value) {
@@ -108,33 +114,33 @@ const getBannerList = async () => {
 		console.log('⚠️ getBannerList 已调用过，跳过')
 		return
 	}
-	
+
 	console.log('🚀 getBannerList 函数被调用')
 	hasLoadedBanner.value = true // 设置标志位
-	
+
 	try {
 		console.log('📡 开始请求轮播图接口...')
 		const response = await Home.queryBannerInfo('home_banner')
 		console.log('✅ 接口响应:', response)
-		
+
 		if (response.data?.success) {
 			const bannerData = response.data.data
 			console.log('📦 轮播图数据:', bannerData)
-			
+
 			if (Array.isArray(bannerData) && bannerData.length > 0) {
 				// 提取所有 bannerImages 并转换为图片URL数组
 				const imageUrls = bannerData
 					.flatMap((item: any) => item.bannerImages || [])
 					.map((item: any) => item.imageUrl)
 					.filter((url: string) => url) // 过滤掉空值
-				
+
 				console.log('🖼️ 提取的图片URL:', imageUrls)
-				
+
 				// 更新 list1 数组
 				list1.length = 0
 				list1.push(...imageUrls)
 				console.log('✅ 轮播图数据已更新，当前数量:', list1.length)
-				
+
 				// 如果没有数据，使用默认图片
 				if (list1.length === 0) {
 					list1.push('https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg')
@@ -247,6 +253,7 @@ const hotelItemList = reactive([
 
 			position: relative;
 			z-index: 2;
+
 			.content-search {
 				width: 95%; // 现在100%会自动减去父元素的padding
 				display: flex;
@@ -302,12 +309,14 @@ const hotelItemList = reactive([
 					// flex-direction: column; // 设置为列布局
 					justify-content: space-between;
 					align-items: stretch; // 让子元素撑满宽度（默认值，但明确设置更清晰）
+
 					// padding-right: 20rpx;
 					.content-search-date-time {
 						flex: 1;
-					
+
 					}
-					.content-search-date-line{
+
+					.content-search-date-line {
 						width: 0;
 						height: 50rpx;
 						align-self: center;
@@ -317,15 +326,16 @@ const hotelItemList = reactive([
 						margin-left: 10rpx;
 
 					}
-				.content-search-date-person {
-					// flex: ;
-					min-width: 180rpx;
-					// height: 100%; // 移除，让 flexbox 的 align-items: stretch 自然拉伸
-					display: flex;
-					flex-wrap: nowrap;
-					justify-content: center;
-					align-items: center;
-				}
+
+					.content-search-date-person {
+						// flex: ;
+						min-width: 180rpx;
+						// height: 100%; // 移除，让 flexbox 的 align-items: stretch 自然拉伸
+						display: flex;
+						flex-wrap: nowrap;
+						justify-content: center;
+						align-items: center;
+					}
 				}
 
 				.content-search-hotel {
