@@ -57,8 +57,9 @@ const handleConfirm = (dates: string[]) => {
 	emit('update:show', false);
 };
 
-// 日历关闭回调
+// 日历关闭回调（点击关闭按钮或遮罩层时触发）
 const handleClose = () => {
+	// 关闭日历（同步到父组件）
 	emit('update:show', false);
 };
 
@@ -71,10 +72,8 @@ const handleClose = () => {
 		mode="range"
 		:defaultDate="defaultDate"
 		:closeOnClickOverlay="true"
-		@update:show="(val: boolean) => emit('update:show', val)"
 		@confirm="handleConfirm"
 		@close="handleClose"
-		@cancel="handleClose"
 	></up-calendar>
 </template>
 

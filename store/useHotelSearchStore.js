@@ -24,12 +24,14 @@ const loadFromStorage = () => {
 					checkOutDate: parsed.searchInfo?.checkOutDate || getTomorrow(),
 					hotelName: parsed.searchInfo?.hotelName || '',
 				},
-				selectedDestination: parsed.selectedDestination || null,
-				cityName: parsed.cityName || '',
-				selectedHotel: parsed.selectedHotel || null,
-				calendarShow: false, // UI 状态不需要持久化
-				calendarMode: parsed.calendarMode || 'range',
-				personCount: parsed.personCount || 1
+		selectedDestination: parsed.selectedDestination || null,
+		cityName: parsed.cityName || '',
+		selectedHotel: parsed.selectedHotel || null,
+		hotelDetail: parsed.hotelDetail || null, // 酒店详情信息
+		calendarShow: false, // UI 状态不需要持久化
+		calendarMode: parsed.calendarMode || 'range',
+		personCount: parsed.personCount || 1,
+		currentCityId: parsed.currentCityId || null // 记录当前列表页使用的城市ID，用于检测城市变化
 			}
 		}
 	} catch (e) {
@@ -39,7 +41,7 @@ const loadFromStorage = () => {
 }
 
 // 需要持久化的字段列表
-const persistFields = ['searchInfo', 'selectedDestination', 'cityName', 'selectedHotel', 'calendarMode', 'personCount']
+const persistFields = ['searchInfo', 'selectedDestination', 'cityName', 'selectedHotel', 'hotelDetail', 'calendarMode', 'personCount', 'currentCityId']
 
 // 保存到本地存储
 const saveToStorage = (state) => {
@@ -70,9 +72,11 @@ const getInitialState = () => {
 		selectedDestination: null,
 		cityName: '',
 		selectedHotel: null,
+		hotelDetail: null, // 酒店详情信息
 		calendarShow: false,
 		calendarMode: 'range',
-		personCount: 1
+		personCount: 1,
+		currentCityId: null // 记录当前列表页使用的城市ID，用于检测城市变化
 	}
 }
 
@@ -91,6 +95,8 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		getHotelName: (state) => state.searchInfo.hotelName,
 		// 获取选中的酒店对象
 		getSelectedHotel: (state) => state.selectedHotel,
+		// 获取酒店详情信息
+		getHotelDetail: (state) => state.hotelDetail,
 		// 获取日历弹窗显示状态
 		getCalendarShow: (state) => state.calendarShow,
 		// 获取日历模式
@@ -100,7 +106,9 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 获取选中的目的地
 		getSelectedDestination: (state) => state.selectedDestination,
 		// 获取城市名称
-		getCityName: (state) => state.cityName
+		getCityName: (state) => state.cityName,
+		// 获取当前列表页使用的城市ID
+		getCurrentCityId: (state) => state.currentCityId
 	},
 	actions: {
 		// 设置完整的搜索信息对象
@@ -129,6 +137,10 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 设置选中的酒店对象
 		setSelectedHotel(hotel) {
 			this.selectedHotel = hotel
+		},
+		// 设置酒店详情信息
+		setHotelDetail(detail) {
+			this.hotelDetail = detail
 		},
 		// 重置所有搜索信息（重置为默认值：今天和明天）
 		resetSearchInfo() {
@@ -176,6 +188,10 @@ export const useHotelSearchStore = defineStore('hotelSearch', {
 		// 设置城市名称
 		setCityName(cityName) {
 			this.cityName = cityName
+		},
+		// 设置当前列表页使用的城市ID（用于检测城市变化）
+		setCurrentCityId(cityId) {
+			this.currentCityId = cityId
 		}
 	}
 })

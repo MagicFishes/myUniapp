@@ -59,7 +59,11 @@
 		<customTabBar />
 		<!-- 日历弹窗 - 提升到页面级别，和底部导航栏同级 -->
 		<!-- 使用 v-if 条件渲染，只在需要时渲染，优化性能 -->
-		<CalendarPopup v-if="calendarShow" v-model:show="calendarShow" />
+		<CalendarPopup 
+			v-if="calendarShow" 
+			:show="calendarShow"
+			@update:show="handleCalendarShowUpdate"
+		/>
 	</view>
 </template>
 
@@ -82,8 +86,17 @@ const goToHotelBrand = () => {
 // 日历弹窗显示状态（响应式）
 const calendarShow = computed({
 	get: () => hotelSearchStore.calendarShow,
-	set: (val) => hotelSearchStore.setCalendarShow(val)
+	set: (val) => {
+		console.log('🏠 home/index.vue: calendarShow setter 被调用, val:', val);
+		hotelSearchStore.setCalendarShow(val);
+	}
 });
+
+// 处理日历弹窗的 update:show 事件
+const handleCalendarShowUpdate = (val: boolean) => {
+	console.log('🏠 home/index.vue: handleCalendarShowUpdate 被调用, val:', val);
+	hotelSearchStore.setCalendarShow(val);
+};
 
 // 目的地文本（响应式）- 从 store 中获取选中的目的地，如果为空则显示"请选择目的地"
 const destinationText = computed(() => {

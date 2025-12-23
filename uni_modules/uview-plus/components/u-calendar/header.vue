@@ -74,6 +74,9 @@
 		display: flex;
 		flex-direction: column;
 		padding-bottom: 4px;
+		position: relative;
+		z-index: 1;
+		pointer-events: none;
 
 		&__title {
 			font-size: 16px;
@@ -82,6 +85,7 @@
 			height: 42px;
 			line-height: 42px;
 			font-weight: bold;
+			pointer-events: none;
 		}
 
 		&__subtitle {

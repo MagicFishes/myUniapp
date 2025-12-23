@@ -29,6 +29,17 @@ export interface GetHotelLowestPricesRes {
   message?: string;
 }
 
+export interface GetHotelByIdParams {
+  hotelId: string | number;
+  profiles?: string[];
+}
+
+export interface GetHotelByIdRes {
+  success: boolean;
+  data: any;
+  message?: string;
+}
+
 export default class Hotel{
     /** 
  * 查询推荐酒店信息
@@ -61,6 +72,17 @@ static async getHotelsByCity(params: GetHotelsByCityParams) {
  */
 static async getHotelLowestPrices(params: GetHotelLowestPricesParams) {
   return post<GetHotelLowestPricesRes>(`/youxia/hotel/lowestPrice`, params);
+}
+
+/**
+ * 根据酒店 ID 查询酒店详情
+ * @param {object} params
+ * @param {string|number} params.hotelId 酒店ID
+ * @param {array} params.profiles 数据配置，可传多个
+ * @returns
+ */
+static async getHotelById(params: GetHotelByIdParams) {
+  return post<GetHotelByIdRes>(`/youxia/hotel/getHotelById`, params);
 }
 }
 

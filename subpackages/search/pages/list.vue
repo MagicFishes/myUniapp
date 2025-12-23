@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { useHotelSearchStore } from '@/store/useHotelSearchStore';
 import searchHotelItem from '@/components/search-hotel-item/index.vue';
@@ -162,6 +162,28 @@ const calendarShow = computed({
 // 获取日期
 const checkInDate = computed(() => hotelSearchStore.getCheckInDate);
 const checkOutDate = computed(() => hotelSearchStore.getCheckOutDate);
+
+// 监听日期变化，自动重新请求酒店列表
+const isInitialized = ref(false);
+watch([checkInDate, checkOutDate], ([newCheckIn, newCheckOut], [oldCheckIn, oldCheckOut]) => {
+	// 避免初始化时触发（onLoad 会处理首次加载）
+	if (!isInitialized.value) {
+		isInitialized.value = true;
+		return;
+	}
+	
+	// 只有当日期真正发生变化且都有值时才重新加载
+	if (newCheckIn && newCheckOut && (newCheckIn !== oldCheckIn || newCheckOut !== oldCheckOut)) {
+		// 确保 cityId 已初始化
+		if (!cityId.value) {
+			initCityIdFromStore();
+		}
+		// 重新加载酒店列表
+		if (cityId.value) {
+			loadHotelList(1, true);
+		}
+	}
+}, { immediate: false });
 
 // 获取城市名称
 const cityName = computed(() => {
@@ -236,6 +258,30 @@ const initCityIdFromStore = () => {
 	const selectedDestination: any = (hotelSearchStore as any).getSelectedDestination || (hotelSearchStore as any).selectedDestination;
 	if (selectedDestination && (selectedDestination.id || selectedDestination.cityId)) {
 		cityId.value = selectedDestination.id || selectedDestination.cityId;
+	}
+};
+
+// 获取当前城市ID（从 store 中）
+const getCurrentCityIdFromStore = (): string | number | null => {
+	const selectedDestination: any = hotelSearchStore.getSelectedDestination;
+	if (selectedDestination && (selectedDestination.id || selectedDestination.cityId)) {
+		return selectedDestination.id || selectedDestination.cityId;
+	}
+	return null;
+};
+
+// 检测城市是否变化，如果变化则重新加载
+const checkCityChangeAndReload = () => {
+	const newCityId = getCurrentCityIdFromStore();
+	const currentCityId = hotelSearchStore.getCurrentCityId;
+	
+	// 如果新城市ID存在且与当前记录的不同，说明选择了新城市
+	if (newCityId && String(newCityId) !== String(currentCityId)) {
+		cityId.value = newCityId;
+		// 更新 store 中记录的城市ID
+		hotelSearchStore.setCurrentCityId(newCityId);
+		// 重新加载酒店列表
+		loadHotelList(1, true);
 	}
 };
 
@@ -401,11 +447,7 @@ const handleSelectHotel = (hotel: any) => {
 		hotelSearchStore.setHotelName(hotel.name);
 	}
 	
-	// 返回上一页
-	// uni.navigateBack({
-	// 	delta: 1
-	// });
-	// 	跳转到酒店详情页面
+	// 跳转到酒店详情页面（详情页会调用接口获取详情）
 	uni.navigateTo({
 		url: `/subpackages/search/pages/detail?id=${hotel.id}`
 	});
@@ -423,12 +465,22 @@ onLoad((options: any) => {
 		initCityIdFromStore();
 	}
 
+	// 保存当前城市ID到 store（用于后续检测城市变化）
+	if (cityId.value) {
+		hotelSearchStore.setCurrentCityId(cityId.value);
+	}
+
 	// 初始加载数据
 	loadHotelList(1, true);
+	// 标记已初始化，允许后续日期变化触发重新加载
+	isInitialized.value = true;
 });
 
 // 页面每次显示时（例如从搜索页返回）
 onShow(() => {
+	// 检测城市是否变化（从城市选择页面返回时）
+	checkCityChangeAndReload();
+	
 	// 如果当前没有酒店数据且不在加载中，则尝试重新加载
 	if (!isLoading.value && hotelList.value.length === 0) {
 		loadHotelList(1, true);

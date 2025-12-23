@@ -15,9 +15,10 @@ interface RoomItem {
 		id: string;
 		rateId?: string;
 		name: string;
-		totalPriceCny: number;
-		priceUnit: string;
-		breakfast: number;
+		totalPrice?: number;
+		totalPriceCny?: number;
+		priceUnit?: string;
+		breakfast?: number;
 	}>;
 }
 
@@ -25,124 +26,20 @@ interface Props {
 	roomList?: RoomItem[];
 }
 
-// 默认假数据
-const defaultRoomList: RoomItem[] = [
-	{
-		id: '6010291',
-		name: '艺术家客房（面积36平）',
-		nameEn: 'BEST AVAILABLE RATE - BED AND BREAKFAST - ARTIST ROOM',
-		image: 'https://cdn.youxiatrip.com/file/1746777609439.jpg',
-		formatImages: [
-			'https://cdn.youxiatrip.com/file/1746777609439.jpg',
-			'https://cdn.youxiatrip.com/file/1747878145243.jpg'
-		],
-		formatAmenities: [
-			{ text: '面积', value: '36m²' },
-			{ text: '大床', value: '1.8m' },
-			{ text: '人数', value: '2人' }
-		],
-		hotelRoomDetails: [
-			{
-				id: '6693738',
-				name: '特价优惠',
-				totalPriceCny: 6752.91,
-				priceUnit: 'CNY',
-				breakfast: 0
-			},
-			{
-				id: '5208590',
-				name: '尊享价格',
-				totalPriceCny: 13376.5,
-				priceUnit: 'CNY',
-				breakfast: 1
-			}
-		]
-	},
-	{
-		id: '6010294',
-		name: '豪华典藏客房（特大床或双床/面积40平）',
-		nameEn: 'BEST AVAILABLE RATE - ROOM ONLY - UNLIMITED SPA DELUXE COLLECTION ROOM',
-		image: 'https://cdn.youxiatrip.com/file/1747878526926.jpg',
-		formatImages: [
-			'https://cdn.youxiatrip.com/file/1747878526926.jpg',
-			'https://cdn.youxiatrip.com/file/1747878507620.jpg'
-		],
-		formatAmenities: [
-			{ text: '面积', value: '40m²' },
-			{ text: '大床', value: '2.0m' },
-			{ text: '人数', value: '2人' },
-			{ text: '景观', value: '城市景观' }
-		],
-		hotelRoomDetails: [
-			{
-				id: '6693740',
-				name: '特价优惠',
-				totalPriceCny: 7580.86,
-				priceUnit: 'CNY',
-				breakfast: 0
-			},
-			{
-				id: '3002100',
-				name: '尊享价格',
-				totalPriceCny: 14618.44,
-				priceUnit: 'CNY',
-				breakfast: 1
-			}
-		]
-	},
-	{
-		id: '6010300',
-		name: '行政客房（特大床或双床/面积45平）',
-		nameEn: 'BEST AVAILABLE RATE - BED AND BREAKFAST - EXECUTIVE ROOM',
-		image: 'https://cdn.youxiatrip.com/file/1746783754336.jpg',
-		formatImages: [
-			'https://cdn.youxiatrip.com/file/1746783754336.jpg',
-			'https://cdn.youxiatrip.com/file/1746783786851.jpg'
-		],
-		formatAmenities: [
-			{ text: '面积', value: '45m²' },
-			{ text: '大床', value: '2.0m' },
-			{ text: '人数', value: '2人' },
-			{ text: '可加床', value: '是' }
-		],
-		hotelRoomDetails: [
-			{
-				id: '6693739',
-				name: '特价优惠',
-				totalPriceCny: 8408.83,
-				priceUnit: 'CNY',
-				breakfast: 0
-			},
-			{
-				id: '3002102',
-				name: '尊享价格',
-				totalPriceCny: 17350.7,
-				priceUnit: 'CNY',
-				breakfast: 1
-			}
-		]
-	}
-];
-
 const props = withDefaults(defineProps<Props>(), {
 	roomList: () => []
 });
 
 const emit = defineEmits(['clickRoom']);
 
-// 使用传入的数据，如果为空则使用默认数据
-const displayRoomList = computed(() => {
-	return props.roomList && props.roomList.length > 0 ? props.roomList : defaultRoomList;
-});
-
 // 获取最低价格
 const getLowestPrice = (room: RoomItem) => {
 	if (!room.hotelRoomDetails || room.hotelRoomDetails.length === 0) {
 		return null;
 	}
-	const prices = room.hotelRoomDetails.map(detail => detail.totalPriceCny);
+	const prices = room.hotelRoomDetails.map(detail => detail.totalPriceCny || detail.totalPrice || 0);
 	const minPrice = Math.min(...prices);
-	const minDetail = room.hotelRoomDetails.find(detail => detail.totalPriceCny === minPrice);
+	const minDetail = room.hotelRoomDetails.find(detail => (detail.totalPriceCny || detail.totalPrice || 0) === minPrice);
 	return {
 		price: minPrice,
 		unit: minDetail?.priceUnit || 'CNY',
@@ -189,7 +86,7 @@ const toggleExpand = (roomId: string, event?: any) => {
 
 // 处理整个item的点击（只有多个价格方案时才可点击）
 const handleItemClick = (room: RoomItem, event?: any) => {
-	if (room.hotelRoomDetails && room.hotelRoomDetails.length > 1) {
+	if (room.hotelRoomDetails && room.hotelRoomDetails.length > 0) {
 		toggleExpand(room.id, event);
 	}
 };
@@ -275,7 +172,7 @@ const getCurrentIndex = (roomId: string) => {
 <template>
 	<view class="hotel-room-list">
 		<view 
-			v-for="room in displayRoomList" 
+			v-for="room in props.roomList" 
 			:key="room.id" 
 			class="room-item"
 		>
@@ -298,7 +195,7 @@ const getCurrentIndex = (roomId: string) => {
 				<!-- 主信息区域：左侧信息 + 右侧按钮 -->
 				<view 
 					class="room-info-main"
-					:class="{ 'clickable': room.hotelRoomDetails && room.hotelRoomDetails.length > 1 }"
+					:class="{ 'clickable': room.hotelRoomDetails && room.hotelRoomDetails.length > 0}"
 					hover-class="none"
 					hover-stop-propagation="true"
 					@click="handleItemClick(room, $event)"
@@ -313,7 +210,15 @@ const getCurrentIndex = (roomId: string) => {
 							<view class="room-price-wrapper" v-if="getLowestPrice(room)">
 								<text class="price-symbol">¥</text>
 								<text class="price-value">{{ formatPrice(getLowestPrice(room)?.price || 0) }}</text>
-								<text class="price-suffix">起＞</text>
+								<text class="price-suffix">起</text>
+								<!-- 折叠箭头 -->
+								<view 
+									class="expand-arrow"
+									:class="{ 'expanded': isExpanded(room.id) }"
+									v-if="room.hotelRoomDetails && room.hotelRoomDetails.length > 0"
+								>
+									<uni-icons type="down" size="16" color="#999"></uni-icons>
+								</view>
 							</view>
 						</view>
 						
@@ -344,7 +249,8 @@ const getCurrentIndex = (roomId: string) => {
 				<!-- 展开后的价格详情区域 -->
 				<view 
 					class="expanded-price-details"
-					v-if="isExpanded(room.id) && room.hotelRoomDetails && room.hotelRoomDetails.length > 0"
+					:class="{ 'show': isExpanded(room.id) }"
+					v-if="room.hotelRoomDetails && room.hotelRoomDetails.length > 0"
 				>
 					<!-- 价格方案列表 -->
 					<view class="price-plans">
@@ -352,10 +258,16 @@ const getCurrentIndex = (roomId: string) => {
 							v-for="(detail, index) in room.hotelRoomDetails" 
 							:key="detail.id || index"
 							class="price-plan-item"
+							:class="{ 'highlight': index === 0 }"
 						>
 							<!-- 左侧：价格名称和房型信息 -->
 							<view class="plan-info-left">
-								<view class="plan-name">{{ detail.name || '标准价格' }}</view>
+								<view class="plan-name-wrapper">
+									<text class="plan-name">{{ detail.name || '标准价格' }}</text>
+									<view class="plan-badge" v-if="index === 0 && room.hotelRoomDetails.length > 1">
+										<text>推荐</text>
+									</view>
+								</view>
 								<!-- 房型信息（设施信息） -->
 								<view class="plan-amenities" v-if="getValidAmenities(room.formatAmenities || []).length > 0">
 									<view 
@@ -372,11 +284,12 @@ const getCurrentIndex = (roomId: string) => {
 							<view class="plan-info-right">
 								<view class="plan-price">
 									<text class="plan-price-symbol">¥</text>
-									<text class="plan-price-value">{{ formatPrice(detail.totalPriceCny) }}</text>
+									<text class="plan-price-value">{{ formatPrice(detail.totalPriceCny || detail.totalPrice || 0) }}</text>
 									<text class="plan-price-unit">{{ detail.priceUnit || 'CNY' }}</text>
 								</view>
 								<view 
 									class="plan-book-btn"
+									:class="{ 'recommended': index === 0 && room.hotelRoomDetails.length > 1 }"
 									@click.stop="handleBook(room, detail)"
 								>
 									<text>预订</text>
@@ -404,9 +317,19 @@ const getCurrentIndex = (roomId: string) => {
 	width: 100%;
 	overflow: visible;
 	background-color: #fff;
-	border-radius: 12rpx;
+	border-radius: 16rpx;
 	padding: 0;
 	box-sizing: border-box;
+	// 外层卡片边框与阴影
+	border: 1rpx solid #f0f0f0;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
+	transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+
+	&:active {
+		transform: scale(0.995);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.04);
+		border-color: #e5d3a3;
+	}
 }
 
 // 上半部分：轮播图
@@ -434,7 +357,6 @@ const getCurrentIndex = (roomId: string) => {
 	align-items: flex-start;
 	width: 100%;
 	gap: 20rpx;
-	
 	&.clickable {
 		cursor: pointer;
 		transition: opacity 0.2s;
@@ -501,6 +423,20 @@ const getCurrentIndex = (roomId: string) => {
 		.price-suffix {
 			font-size: 24rpx;
 			color: #333;
+		}
+		
+		// 折叠箭头
+		.expand-arrow {
+			margin-left: 8rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: transform 0.3s ease;
+			transform: rotate(0deg);
+			
+			&.expanded {
+				transform: rotate(180deg);
+			}
 		}
 	}
 }
@@ -623,12 +559,20 @@ const getCurrentIndex = (roomId: string) => {
 // 展开后的价格详情区域
 .expanded-price-details {
 	width: 100%;
-	margin-top: 20rpx;
-	padding-top: 20rpx;
-	border-top: 1rpx solid #f0f0f0;
+	// margin-top: 20rpx;
+	// padding-top: 20rpx;
 	display: flex;
 	flex-direction: column;
-	gap: 20rpx;
+	gap: 0;
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+	transition: all 0.3s ease;
+	
+	&.show {
+		max-height: 2000rpx;
+		opacity: 1;
+	}
 }
 
 // 展开后的按钮区域
@@ -693,12 +637,24 @@ const getCurrentIndex = (roomId: string) => {
 		flex-direction: row;
 		justify-content: space-between;
 		align-items: flex-start;
-		padding: 24rpx 0;
+		padding: 28rpx 24rpx;
 		border-bottom: 1rpx solid #f0f0f0;
 		gap: 20rpx;
+		background-color: #fff;
+		transition: all 0.2s ease;
 		
 		&:last-child {
 			border-bottom: none;
+		}
+		
+		&:hover {
+			background-color: #fafafa;
+		}
+		
+		&.highlight {
+			background: linear-gradient(135deg, #fff9f0 0%, #fff5e6 100%);
+			border-left: 4rpx solid #d4ab62;
+			padding-left: 20rpx;
 		}
 		
 		.plan-info-left {
@@ -708,11 +664,30 @@ const getCurrentIndex = (roomId: string) => {
 			flex-direction: column;
 			gap: 12rpx;
 			
-			.plan-name {
-				font-size: 30rpx;
-				font-weight: bold;
-				color: #333;
-				line-height: 1.5;
+			.plan-name-wrapper {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				gap: 12rpx;
+				
+				.plan-name {
+					font-size: 30rpx;
+					font-weight: bold;
+					color: #333;
+					line-height: 1.5;
+				}
+				
+				.plan-badge {
+					padding: 4rpx 12rpx;
+					background: linear-gradient(135deg, #d4ab62 0%, #b37e29 100%);
+					border-radius: 12rpx;
+					
+					text {
+						font-size: 20rpx;
+						color: #fff;
+						font-weight: 500;
+					}
+				}
 			}
 			
 			.plan-amenities {
@@ -782,8 +757,12 @@ const getCurrentIndex = (roomId: string) => {
 				font-size: 26rpx;
 				cursor: pointer;
 				transition: all 0.3s;
-				// border: 1rpx solid rgba(255, 215, 0, 0.3);
 				box-shadow: 0 2rpx 8rpx rgba(255, 215, 0, 0.2);
+				
+				&.recommended {
+					background: linear-gradient(135deg, #d4ab62 0%, #b37e29 100%);
+					box-shadow: 0 4rpx 12rpx rgba(212, 171, 98, 0.4);
+				}
 				
 				&:active {
 					opacity: 0.9;

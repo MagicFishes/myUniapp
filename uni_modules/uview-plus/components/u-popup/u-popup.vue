@@ -47,10 +47,11 @@
 					<!-- iOS风格的横条指示器 -->
 					<view class="u-popup__content__indicator"></view>
 				</view>
-				<slot></slot>
+				<!-- 关闭按钮移到 slot 之前，确保在最上层，避免被内容遮挡 -->
 				<view
 					v-if="closeable"
 					@tap.stop="close"
+					@click.stop="close"
 					class="u-popup__content__close"
 					:class="['u-popup__content__close--' + closeIconPos]"
 					hover-class="u-popup__content__close--hover"
@@ -63,6 +64,7 @@
 						bold
 					></up-icon>
 				</view>
+				<slot></slot>
 				<u-safe-bottom v-if="safeAreaInsetBottom"></u-safe-bottom>
 			</view>
 			<slot name="bottom"></slot>
@@ -245,6 +247,10 @@
 				this.$emit('update:show', true)
 			},
 			close(e) {
+				// 阻止事件冒泡，确保关闭事件正确触发
+				if (e && e.stopPropagation) {
+					e.stopPropagation();
+				}
 				this.$emit('update:show', false)
 				this.$emit('close')
 			},
@@ -422,6 +428,17 @@
 
 			&__close {
 				position: absolute;
+				z-index: 99999 !important;
+				cursor: pointer;
+				pointer-events: auto !important;
+				padding: 10px;
+				margin: -10px;
+				min-width: 44px;
+				min-height: 44px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background-color: transparent;
 
 				&--hover {
 					opacity: 0.4;
