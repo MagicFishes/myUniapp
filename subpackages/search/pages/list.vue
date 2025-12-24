@@ -32,7 +32,7 @@
 				</view>
 			</view>
 			<!-- 加载状态 -->
-			<view class="loading-wrapper" v-if="isLoading">
+			<view class="loading-wrapper" v-if="isLoadingHotel">
 				<text class="loading-text">加载中...</text>
 			</view>
 
@@ -216,7 +216,7 @@ const handleSearchClick = () => {
 
 // 酒店列表数据
 const hotelList = ref<any[]>([]);
-const isLoading = ref(false);
+const isLoadingHotel = ref(false); // 只控制酒店列表的加载状态
 const hasMore = ref(true);
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -285,9 +285,75 @@ const checkCityChangeAndReload = () => {
 	}
 };
 
+// 加载酒店价格（异步，不阻塞列表显示）
+const loadHotelPrices = async () => {
+	const hotelIds = hotelList.value.map((item: any) => item.id);
+	if (hotelIds.length === 0) return;
+
+	try {
+		const checkin = hotelSearchStore.getCheckInDate;
+		const checkout = hotelSearchStore.getCheckOutDate;
+		const adultNum = hotelSearchStore.getPersonCount;
+
+		const { data: priceRes } = await Hotel.getHotelLowestPrices({
+			ids: hotelIds,
+			checkin,
+			checkout,
+			adultNum
+		} as any);
+
+		if (priceRes?.success && Array.isArray(priceRes.data)) {
+      // 创建 id -> index 映射，方便回填价格
+      const hotelIndexMap = hotelList.value.reduce((acc: any, cur: any, index: number) => {
+        const idKey = String(cur.id);
+        acc[idKey] = index;
+        return acc;
+      }, {});
+
+      const matchedHotelIds = new Set<string>();
+
+      // 匹配最低价到对应酒店
+      priceRes.data.forEach((item: any) => {
+        const priceId = String(item.id);
+        const hotelIndex = hotelIndexMap[priceId];
+        if (hotelIndex !== undefined) {
+          matchedHotelIds.add(priceId);
+
+          if (item.minPrice === null || item.minPrice === undefined) {
+            // 价格接口有这个酒店，但返回 null，视为满房
+            hotelList.value[hotelIndex].lowestPrice = {
+              minPrice: 0,
+              initPriceUnit: ''
+            };
+          } else {
+            hotelList.value[hotelIndex].lowestPrice = {
+              minPrice: item.minPrice,
+              initPriceUnit: item.initPriceUnit || 'CNY'
+            };
+          }
+        }
+      });
+
+      // 对于价格接口中完全没有出现的酒店，同样视为满房
+      hotelList.value.forEach((item: any) => {
+        const idKey = String(item.id);
+        if (!matchedHotelIds.has(idKey)) {
+          item.lowestPrice = {
+            minPrice: 0,
+            initPriceUnit: ''
+          };
+        }
+      });
+		}
+	} catch (error: any) {
+		console.error('加载价格失败:', error);
+		// 价格加载失败不影响列表显示，静默处理
+	}
+};
+
 // 加载酒店列表（真实接口，一次性获取）
 const loadHotelList = async (page: number = 1, reset: boolean = false) => {
-	if (isLoading.value) return;
+	if (isLoadingHotel.value) return;
 
 	// 优先从路由参数取，其次从 store 取
 	if (!cityId.value) {
@@ -298,7 +364,7 @@ const loadHotelList = async (page: number = 1, reset: boolean = false) => {
 		}
 	}
 
-	isLoading.value = true;
+	isLoadingHotel.value = true;
 
 	try {
 		// 1. 调用城市酒店列表接口
@@ -327,62 +393,15 @@ const loadHotelList = async (page: number = 1, reset: boolean = false) => {
 			hotelList.value = [...hotelList.value, ...pageData];
 		}
 
-		// 创建 id -> index 映射，方便回填价格
-		const hotelIndexMap = hotelList.value.reduce((acc: any, cur: any, index: number) => {
-			const idKey = String(cur.id);
-			acc[idKey] = index;
-			return acc;
-		}, {});
-
-		// 2. 调用最低价接口
-		const hotelIds = hotelList.value.map((item: any) => item.id);
-		if (hotelIds.length > 0) {
-			const checkin = hotelSearchStore.getCheckInDate;
-			const checkout = hotelSearchStore.getCheckOutDate;
-			const adultNum = hotelSearchStore.getPersonCount;
-
-			const { data: priceRes } = await Hotel.getHotelLowestPrices({
-				ids: hotelIds,
-				checkin,
-				checkout,
-				adultNum
-			} as any);
-
-			if (priceRes?.success && Array.isArray(priceRes.data)) {
-				// 匹配最低价到对应酒店
-				priceRes.data.forEach((item: any) => {
-					const priceId = String(item.id);
-					const hotelIndex = hotelIndexMap[priceId];
-					if (hotelIndex !== undefined) {
-						if (item.minPrice === null || item.minPrice === undefined) {
-							hotelList.value[hotelIndex].lowestPrice = {
-								minPrice: null,
-								initPriceUnit: ''
-							};
-						} else {
-							hotelList.value[hotelIndex].lowestPrice = {
-								minPrice: item.minPrice,
-								initPriceUnit: item.initPriceUnit || 'CNY'
-							};
-						}
-					}
-				});
-
-				// 对于没有匹配到价格的酒店，设置默认“满房”状态
-				hotelList.value.forEach((item: any) => {
-					if (item.lowestPrice === null) {
-						item.lowestPrice = {
-							minPrice: null,
-							initPriceUnit: ''
-						};
-					}
-				});
-			}
-		}
-
 		// 本页面不做分页，一次性加载完
 		hasMore.value = false;
 		currentPage.value = 1;
+
+		// 酒店列表加载完成后，立即关闭 loading，让列表先显示
+		isLoadingHotel.value = false;
+
+		// 2. 异步加载价格，不阻塞列表显示
+		loadHotelPrices();
 	} catch (error: any) {
 		console.error('加载失败:', error);
 		uni.showToast({
@@ -392,8 +411,7 @@ const loadHotelList = async (page: number = 1, reset: boolean = false) => {
 		if (reset) {
 			hotelList.value = [];
 		}
-	} finally {
-		isLoading.value = false;
+		isLoadingHotel.value = false;
 	}
 };
 
@@ -433,7 +451,7 @@ const handleConfirmFilter = () => {
 
 // 加载更多
 const loadMore = () => {
-	if (!hasMore.value || isLoading.value) return;
+	if (!hasMore.value || isLoadingHotel.value) return;
 	loadHotelList(currentPage.value + 1, false);
 };
 
@@ -482,7 +500,7 @@ onShow(() => {
 	checkCityChangeAndReload();
 	
 	// 如果当前没有酒店数据且不在加载中，则尝试重新加载
-	if (!isLoading.value && hotelList.value.length === 0) {
+	if (!isLoadingHotel.value && hotelList.value.length === 0) {
 		loadHotelList(1, true);
 	}
 });

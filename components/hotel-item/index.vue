@@ -16,12 +16,18 @@ const props = defineProps<{
   item: HotelItemType
 }>();
 
+const emit = defineEmits(['clickHotelDetail']);
+
+const handleClickHotelDetail = () => {
+  emit('clickHotelDetail', props.item);
+};
+
 // 默认图片
 const defaultImage = 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg'
 </script>
 <template>
   <!-- 上下结构布局  上图片,下  酒店名称 文字 标签-->
-  <view class="hotel-item">
+  <view class="hotel-item" @click="handleClickHotelDetail">
     <view class="hotel-item-top">
       <image
         :src="props.item?.image || defaultImage"

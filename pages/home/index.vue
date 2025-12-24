@@ -49,7 +49,7 @@
 				<view class="content-search-hotel-recommend">
 					<view v-for="(item, index) in hotelItemList" :key="item.id || index"
 						class="content-search-hotel-recommend-item">
-						<HotelItem :item="item" />
+						<HotelItem :item="item" @clickHotelDetail="handleSelectHotelFromRecommend" />
 					</view>
 				</view>
 			</view>
@@ -76,6 +76,7 @@ import CalendarPopup from '@/components/calendar-popup/index.vue';
 import utils from '@/utils/utils';
 import { useHotelSearchStore } from '@/store/useHotelSearchStore';
 import Home from '@/api/home';
+import Hotel from '@/api/hotel';
 import personCounter from '@/components/person-counter/index.vue';
 const hotelSearchStore = useHotelSearchStore();
 const goToHotelBrand = () => {
@@ -183,6 +184,7 @@ onLoad((options) => {
 	console.log('📋 当前 list1 初始值:', list1)
 	console.log('📋 list1 长度:', list1.length)
 	getBannerList()
+	getHomeHotelList()
 })
 
 // 跳转到搜索页面
@@ -208,29 +210,71 @@ const list1 = reactive([
 
 // 添加一个标志位，防止重复调用接口
 const hasLoadedBanner = ref(false)
-const hotelItemList = reactive([
-	{
-		id: 1, // 添加 id 字段
-		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-		name: '酒店名称1',
-		price: '100',
-		label: ['住3付2', '享奢旅积分', '享奢旅积分', '享奢旅积分', '享奢旅积分'],
-	},
-	{
-		id: 2, // 添加 id 字段
-		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-		name: '酒店名称2',
-		price: '200',
-		label: ['住3付2', '享奢旅积分'],
-	},
-	{
-		id: 3, // 添加 id 字段
-		image: 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg',
-		name: '酒店名称3',
-		price: '300',
-		label: ['住3付2', '享奢旅积分'],
+
+// 首页推荐酒店列表
+const hotelItemList = ref<any[]>([]);
+
+// 获取首页推荐酒店内容（对接 Web 端 getHotHotel 使用的同一推荐酒店接口）
+const getHomeHotelList = async () => {
+	try {
+		// Web 端 getHotHotel 默认传的是空字符串，这里保持一致
+		const { data } = await Hotel.queryRecommendHotelInfo('');
+
+		if (data?.success && Array.isArray(data.data)) {
+			// 映射为小程序首页 HotelItem 组件所需结构
+			hotelItemList.value = data.data.map((item: any) => ({
+				id: item.hotelId,
+				// hotelImages 可能是逗号分隔的多张图，这里取第一张
+				image: typeof item.hotelImages === 'string'
+					? item.hotelImages.split(',')[0]
+					: item.hotelImages,
+				name: item.hotelName,
+				nameEn: item.hotelEnName,
+				code: item.hotelCode,
+				addressPath: item.addressPath,
+				price: '',
+				label: [] as string[],
+				raw: item, // 保留原始数据，后续有需要可以继续使用
+			}));
+			console.log('🏠 home/index.vue: hotelItemList:', hotelItemList.value);
+		} else {
+			hotelItemList.value = [];
+		}
+	} catch (error) {
+		console.error('获取首页酒店推荐内容失败:', error);
+		hotelItemList.value = [];
 	}
-]);
+};
+
+// 首页推荐酒店点击，跳转到酒店详情页
+const handleSelectHotelFromRecommend = (hotel: any) => {
+	// 推荐卡片里我们把原始数据挂在 raw 上
+	const target = hotel?.raw || hotel;
+
+	// 存到 store，方便详情页使用
+	hotelSearchStore.setSelectedHotel(target);
+
+	// 更新酒店名称（优先用接口里的 hotelName）
+	const hotelName = target.hotelName || target.name;
+	if (hotelName) {
+		hotelSearchStore.setHotelName(hotelName);
+	}
+
+	// 详情页根据 id 查详情：
+	// 首页推荐接口返回的是 hotelCode，需求是点击推荐酒店传递 code，而不是 id
+	// 所以这里优先使用 code / hotelCode，其次再兜底 hotelId / id
+	const id = target.code || target.hotelCode || target.hotelId || target.id;
+	if (!id) {
+		console.warn('首页推荐酒店缺少 hotelId / id，无法跳转详情', target);
+		return;
+	}
+
+	uni.navigateTo({
+		url: `/subpackages/search/pages/detail?id=${id}`
+	});
+};
+
+// 在页面加载时同时拉取 Banner 和首页推荐酒店内容
 </script>
 
 <style scoped lang="scss">

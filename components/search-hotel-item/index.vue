@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 // 定义酒店项的类型
 type HotelItemType = {
   id?: number | string;
@@ -24,6 +25,20 @@ const handleClickHotelDetail = () => {
   emit('clickHotelDetail', props.item);
 };
 
+// 是否满房（价格已加载且价格 <= 0 视为满房）
+const isSoldOut = computed(() => {
+  const lowestPrice = props.item?.lowestPrice;
+  if (!lowestPrice) return false;
+
+  const price = lowestPrice.minPrice;
+  if (price === null || price === undefined) return false;
+
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  if (isNaN(numPrice)) return false;
+
+  return numPrice <= 0;
+});
+
 // 格式化价格显示
 const formatPrice = (price: number | string | null): string => {
   if (!price || price === 0 || price === '0') return '--';
@@ -34,7 +49,11 @@ const formatPrice = (price: number | string | null): string => {
 </script>
 <template>
   <!-- 左右结构布局  左图片,右  酒店名称 文字 价格-->
-  <view class="hotel-item" @click="handleClickHotelDetail">
+  <view
+    class="hotel-item"
+    :class="{ 'hotel-item-disabled': isSoldOut }"
+    @click="!isSoldOut && handleClickHotelDetail()"
+  >
     <view class="hotel-item-left">
       <image
         :src="props.item?.image || 'https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg'"
@@ -70,10 +89,10 @@ const formatPrice = (price: number | string | null): string => {
               <text class="hotel-item-price-value">{{ formatPrice(props.item.lowestPrice?.minPrice) }}</text>
               <text class="hotel-item-price-unit">{{ props.item.lowestPrice?.initPriceUnit || 'CNY' }}</text>
             </view>
-            <!-- <view v-if="Number(props.item?.lowestPrice?.minPrice) > 0" class="hotel-item-price-desc">
+            <view v-if="Number(props.item?.lowestPrice?.minPrice) > 0" class="hotel-item-price-desc">
               <text>起/每晚</text>
               <text>包含税金和额外费用</text>
-            </view> -->
+            </view>
             <view v-if="Number(props.item?.lowestPrice?.minPrice) <= 0" class="hotel-item-sold-out-tag">
               <text>酒店满房</text>
             </view>
@@ -305,6 +324,11 @@ const formatPrice = (price: number | string | null): string => {
       }
     }
   }
+}
+
+.hotel-item-disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 </style>

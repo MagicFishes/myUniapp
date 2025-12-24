@@ -605,16 +605,55 @@ const handleOpenCalendar = () => {
 };
 
 // 点击房型
-const handleClickRoom = (room: any) => {
-	console.log('点击房型:', room);
+const handleClickRoom = (data: any) => {
+	console.log('点击房型:', data);
+	
+	// 新格式：{ room, detail }
+	if (!data || !data.room || !data.detail) {
+		uni.showToast({
+			title: '数据格式错误',
+			icon: 'none'
+		});
+		return;
+	}
 
-	// 跳转到下单页面，传递房间信息和酒店信息
-	const roomInfoStr = encodeURIComponent(JSON.stringify(room));
-	const hotelInfoStr = encodeURIComponent(JSON.stringify(hotelDetail.value));
+	const room = data.room;
+	const detail = data.detail;
 
-	uni.navigateTo({
-		url: `/subpackages/search/pages/booking?roomInfo=${roomInfoStr}&hotelInfo=${hotelInfoStr}`
-	});
+	// 存储房型基本信息 + 选中的价格方案（detail）
+	try {
+		// 存储房型基本信息（不包含 hotelRoomDetails）
+		const roomInfo = {
+			id: room.id,
+			name: room.name,
+			nameEn: room.nameEn,
+			image: room.image,
+			formatImages: room.formatImages,
+			formatAmenities: room.formatAmenities,
+			amenities: room.amenities,
+			hotelId: room.hotelId
+		};
+		
+		// 存储选中的价格方案（detail）
+		const selectedRate = detail;
+		
+		// 使用固定的 key 存储，每次覆盖
+		uni.setStorageSync('booking_roomInfo', {
+			roomInfo: roomInfo,
+			selectedRate: selectedRate
+		});
+		
+		// 直接跳转，不需要传递参数
+		uni.navigateTo({
+			url: `/subpackages/search/pages/booking`
+		});
+	} catch (e) {
+		console.error('存储预订数据失败:', e);
+		uni.showToast({
+			title: '数据存储失败，请重试',
+			icon: 'none'
+		});
+	}
 };
 
 const handleBook = () => {
