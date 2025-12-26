@@ -64,6 +64,8 @@
 			:show="calendarShow"
 			@update:show="handleCalendarShowUpdate"
 		/>
+		<!-- 全局授权弹窗（在首页渲染，因为首页是主要入口页面） -->
+		<AuthPopup />
 	</view>
 </template>
 
@@ -73,12 +75,15 @@ import { onShow, onLoad } from '@dcloudio/uni-app'
 import ChooseTimeData from '@/components/choose-time-data/index.vue';
 import HotelItem from '@/components/hotel-item/index.vue';
 import CalendarPopup from '@/components/calendar-popup/index.vue';
+import AuthPopup from '@/components/auth-popup/index.vue';
 import utils from '@/utils/utils';
 import { useHotelSearchStore } from '@/store/useHotelSearchStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import Home from '@/api/home';
 import Hotel from '@/api/hotel';
 import personCounter from '@/components/person-counter/index.vue';
 const hotelSearchStore = useHotelSearchStore();
+const authStore = useAuthStore();
 const goToHotelBrand = () => {
 	uni.navigateTo({
 		url: '/subpackages/search/pages/hotelBrand'
@@ -107,17 +112,10 @@ const destinationText = computed(() => {
 
 // 页面显示时执行（每次显示都会执行）
 onShow(() => {
-	console.log('🟢 onShow 生命周期触发 - 首页显示')
-	console.log('📋 hasLoadedBanner:', hasLoadedBanner.value)
-	console.log('📋 list1 长度:', list1.length)
-
 	// 如果是 tabBar 页面，首次加载时可能不会触发 onLoad，所以在这里也调用一次
 	// 使用标志位避免重复调用
 	if (!hasLoadedBanner.value) {
-		console.log('⚠️ 首次加载，在 onShow 中调用 getBannerList')
 		getBannerList()
-	} else {
-		console.log('✅ 轮播图已加载过，跳过')
 	}
 })
 
@@ -125,21 +123,16 @@ onShow(() => {
 const getBannerList = async () => {
 	// 防止重复调用
 	if (hasLoadedBanner.value) {
-		console.log('⚠️ getBannerList 已调用过，跳过')
 		return
 	}
 
-	console.log('🚀 getBannerList 函数被调用')
 	hasLoadedBanner.value = true // 设置标志位
 
 	try {
-		console.log('📡 开始请求轮播图接口...')
 		const response = await Home.queryBannerInfo('home_banner')
-		console.log('✅ 接口响应:', response)
 
 		if (response.data?.success) {
 			const bannerData = response.data.data
-			console.log('📦 轮播图数据:', bannerData)
 
 			if (Array.isArray(bannerData) && bannerData.length > 0) {
 				// 提取所有 bannerImages 并转换为图片URL数组
@@ -148,23 +141,15 @@ const getBannerList = async () => {
 					.map((item: any) => item.imageUrl)
 					.filter((url: string) => url) // 过滤掉空值
 
-				console.log('🖼️ 提取的图片URL:', imageUrls)
-
 				// 更新 list1 数组
 				list1.length = 0
 				list1.push(...imageUrls)
-				console.log('✅ 轮播图数据已更新，当前数量:', list1.length)
 
 				// 如果没有数据，使用默认图片
 				if (list1.length === 0) {
 					list1.push('https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg')
-					console.log('⚠️ 没有数据，使用默认图片')
 				}
-			} else {
-				console.log('⚠️ 轮播图数据为空')
 			}
-		} else {
-			console.log('❌ 接口返回失败:', response.data)
 		}
 	} catch (error) {
 		console.error('❌ 获取轮播图失败:', error)
@@ -172,17 +157,24 @@ const getBannerList = async () => {
 		// 如果接口失败，使用默认图片
 		if (list1.length === 0) {
 			list1.push('https://cos.anydoorcloud.com/wusuowei/website/2025-05-19/f34edf1e08494879a9909c3ec90c86fa.jpg')
-			console.log('⚠️ 接口失败，使用默认图片')
 		}
 	}
 }
 
-// 页面加载时获取轮播图数据
+// 页面加载时获取轮播图数据（首次加载时执行）
 onLoad((options) => {
-	console.log('🎯 ========== onLoad 生命周期触发！==========')
-	console.log('📋 页面参数:', options)
-	console.log('📋 当前 list1 初始值:', list1)
-	console.log('📋 list1 长度:', list1.length)
+	// 检查是否已授权，如果未授权则显示授权弹窗
+	const isAuthorized = authStore.isAuthorized
+	console.log('🔍 [Home] 检查授权，结果:', isAuthorized)
+	if (!isAuthorized) {
+		console.log('⚠️ [Home] 用户未授权，显示授权弹窗')
+		// 使用 setTimeout 确保 DOM 渲染完成
+		setTimeout(() => {
+			authStore.showAuthPopup()
+			console.log('✅ [Home] 弹窗状态已设置为 true，当前值:', authStore.showAuthModal)
+		}, 100)
+	}
+	
 	getBannerList()
 	getHomeHotelList()
 })
@@ -214,6 +206,15 @@ const hasLoadedBanner = ref(false)
 // 首页推荐酒店列表
 const hotelItemList = ref<any[]>([]);
 
+// 清除授权信息（用于测试，可以在控制台调用：clearUserAuth()）
+// @ts-ignore
+if (typeof window !== 'undefined') {
+	// @ts-ignore
+	window.clearUserAuth = () => {
+		authStore.clearAuth()
+	}
+}
+
 // 获取首页推荐酒店内容（对接 Web 端 getHotHotel 使用的同一推荐酒店接口）
 const getHomeHotelList = async () => {
 	try {
@@ -236,7 +237,6 @@ const getHomeHotelList = async () => {
 				label: [] as string[],
 				raw: item, // 保留原始数据，后续有需要可以继续使用
 			}));
-			console.log('🏠 home/index.vue: hotelItemList:', hotelItemList.value);
 		} else {
 			hotelItemList.value = [];
 		}

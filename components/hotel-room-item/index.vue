@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useHotelSearchStore } from '@/store/useHotelSearchStore';
+import dayjs from 'dayjs';
+
+const hotelSearchStore = useHotelSearchStore();
 
 interface RoomItem {
 	id: string;
@@ -95,6 +99,35 @@ const handleItemClick = (room: RoomItem, event?: any) => {
 const formatPrice = (price: number): string => {
 	if (!price || price === 0) return '--';
 	return Number(price).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+};
+
+// 计算入住天数
+const getBookingNights = (): number => {
+	const checkInDate = hotelSearchStore.getCheckInDate;
+	const checkOutDate = hotelSearchStore.getCheckOutDate;
+	if (!checkInDate || !checkOutDate) return 1;
+	try {
+		const checkIn = dayjs(checkInDate);
+		const checkOut = dayjs(checkOutDate);
+		const diffDays = checkOut.diff(checkIn, 'day');
+		return diffDays > 0 ? diffDays : 1;
+	} catch (e) {
+		return 1;
+	}
+};
+
+// 获取房间数量（默认为1）
+const getRoomNum = (): number => {
+	return 1; // 默认1间，如果需要可以从其他地方获取
+};
+
+// 计算每晚单价（总价 / 天数 / 间数），保留两位小数
+const calculatePricePerNight = (totalPrice: number): number => {
+	const nights = getBookingNights();
+	const roomNum = getRoomNum();
+	if (nights <= 0 || roomNum <= 0) return totalPrice;
+	const pricePerNight = totalPrice / nights / roomNum;
+	return Number(pricePerNight.toFixed(2));
 };
 
 // 获取房间图片列表
@@ -209,8 +242,8 @@ const getCurrentIndex = (roomId: string) => {
 							</view>
 							<view class="room-price-wrapper" v-if="getLowestPrice(room)">
 								<text class="price-symbol">¥</text>
-								<text class="price-value">{{ formatPrice(getLowestPrice(room)?.price || 0) }}</text>
-								<text class="price-suffix">起</text>
+								<text class="price-value">{{ formatPrice(calculatePricePerNight(getLowestPrice(room)?.price || 0)) }}</text>
+								<text class="price-suffix">起/每晚</text>
 								<!-- 折叠箭头 -->
 								<view 
 									class="expand-arrow"
@@ -269,14 +302,16 @@ const getCurrentIndex = (roomId: string) => {
 									</view>
 								</view>
 								<!-- 房型信息（设施信息） -->
-								<view class="plan-amenities" v-if="getValidAmenities(room.formatAmenities || []).length > 0">
-									<view 
+								<!-- v-if="getValidAmenities(room.formatAmenities || []).length > 0" -->
+								<view class="plan-amenities" style="font-size: 30rpx;margin-top: 10rpx;" >
+									<!-- <view 
 										v-for="(amenity, amenityIndex) in getValidAmenities(room.formatAmenities || [])" 
 										:key="amenityIndex"
 										class="amenity-item"
 									>
 										<text>{{ amenity.text }}：{{ amenity.value }}</text>
-									</view>
+									</view> -->
+									{{detail?.breakfast == 0 ? '无早' : detail?.breakfast == 1 ? '单早' : ''}}
 								</view>
 							</view>
 							
@@ -284,8 +319,11 @@ const getCurrentIndex = (roomId: string) => {
 							<view class="plan-info-right">
 								<view class="plan-price">
 									<text class="plan-price-symbol">¥</text>
-									<text class="plan-price-value">{{ formatPrice(detail.totalPriceCny || detail.totalPrice || 0) }}</text>
+									<text class="plan-price-value">{{ formatPrice(calculatePricePerNight(detail.totalPriceCny || detail.totalPrice || 0)) }}</text>
 									<text class="plan-price-unit">{{ detail.priceUnit || 'CNY' }}</text>
+								</view>
+								<view class="plan-price-per-night">
+									<text>起/每晚</text>
 								</view>
 								<view 
 									class="plan-book-btn"
@@ -722,24 +760,38 @@ const getCurrentIndex = (roomId: string) => {
 				display: flex;
 				flex-direction: row;
 				align-items: baseline;
-				gap: 6rpx;
+				gap: 4rpx;
 				
 				.plan-price-symbol {
-					font-size: 28rpx;
+					font-size: 24rpx;
 					color: #FF8C00;
 					line-height: 1;
 					align-self: flex-start;
 					margin-top: 4rpx;
+					font-weight: 500;
 				}
 				
 				.plan-price-value {
-					font-size: 32rpx;
+					font-size: 36rpx;
 					color: #FF8C00;
 					line-height: 1;
+					font-weight: 600;
 				}
 				
 				.plan-price-unit {
-					font-size: 24rpx;
+					font-size: 22rpx;
+					color: #999;
+					line-height: 1;
+					margin-left: 4rpx;
+				}
+			}
+			
+			.plan-price-per-night {
+				margin-top: 4rpx;
+				text-align: right;
+				
+				text {
+					font-size: 22rpx;
 					color: #999;
 					line-height: 1;
 				}

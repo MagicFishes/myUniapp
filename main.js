@@ -4,6 +4,7 @@ import App from './App.vue'
 import uviewPlus from '@/uni_modules/uview-plus'
 import customNavBar from '@/components/custom-nav-bar/index.vue'
 import customTabBar from '@/components/custom-tab-bar/index.vue'
+import AuthPopup from '@/components/auth-popup/index.vue'
 import pinia from './store'
 
 export function createApp() {
@@ -12,6 +13,7 @@ export function createApp() {
   app.use(uviewPlus)
   app.component('customNavBar', customNavBar)
   app.component('customTabBar', customTabBar)
+  app.component('AuthPopup', AuthPopup)
   return {
     app,
     pinia

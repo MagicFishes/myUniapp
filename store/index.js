@@ -31,4 +31,5 @@ pinia.use(({ store }) => {
 export default pinia
 export * from './useDownloadStore'
 export * from './useHotelSearchStore'
+export * from './useAuthStore'
 
